@@ -1,0 +1,18 @@
+<Solution>
+  <Configurations>
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path="Readme.md" />
+  </Folder>
+  <Project Path="DrawboardCodingExercise.Contracts/DrawboardCodingExercise.Contracts.csproj" />
+  <Project Path="DrawboardCodingExercise.Services.IntegrationTests/DrawboardCodingExercise.Services.IntegrationTests.csproj" />
+  <Project Path="DrawboardCodingExercise.Services.UnitTests/DrawboardCodingExercise.Services.UnitTests.csproj" />
+  <Project Path="DrawboardCodingExercise.Services/DrawboardCodingExercise.Services.csproj" />
+  <Project Path="DrawboardCodingExercise.ViewModel/DrawboardCodingExercise.ViewModel.csproj" />
+  <Project Path="DrawboardCodingExercise/DrawboardCodingExercise.csproj" DefaultStartup="true" Id="5fd44ffe-8199-4ede-bf19-433428625058">
+    <Platform Solution="*|ARM64" Project="ARM64" />
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+</Solution>
