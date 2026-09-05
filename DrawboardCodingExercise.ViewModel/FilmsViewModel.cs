@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using DrawboardCodingExercise.Contracts;
 using DrawboardCodingExercise.Contracts.CoreFramework;
 using DrawboardCodingExercise.Contracts.Services;
 using DrawboardCodingExercise.Services.StarWars;
@@ -19,6 +21,7 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 	private readonly IStarWarsService _starWarsService;
 	private readonly ILocalizationService _localizationService;
 	private readonly ILogger _logger;
+	private readonly INavigationService _navigationService;
 
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(IsLoading))]
@@ -39,12 +42,14 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 		IEventAggregator eventAggregator,
 		IUserInteractionService userInteractionService,
 		ILocalizationService localizationService,
-		ILogger logger)
+		ILogger logger,
+		INavigationService navigationService)
 		: base(eventAggregator, userInteractionService)
 	{
 		_starWarsService = starWarsService;
 		_localizationService = localizationService;
 		_logger = logger;
+		_navigationService = navigationService;
 	}
 
 	public ObservableCollection<FilmListItem> Films { get; } = new();
@@ -94,5 +99,19 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 		}
 
 		State = items.Count == 0 ? PageLoadState.Empty : PageLoadState.Loaded;
+	}
+
+	[RelayCommand]
+	private Task SelectFilm(FilmListItem film)
+	{
+		// The id is opaque and comes only from FilmListItem.Id (extracted from the film's `url`
+		// by FilmMapper) - it must never be derived from the episode number, since a film's id
+		// is its release-order position and has no relationship to its episode number.
+		if (film?.Id is null)
+		{
+			return Task.CompletedTask;
+		}
+
+		return _navigationService.NavigateAsync(PageKey.FilmDetails, film.Id);
 	}
 }
