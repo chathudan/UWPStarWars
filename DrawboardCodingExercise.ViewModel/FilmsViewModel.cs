@@ -71,6 +71,9 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 				dto,
 				_localizationService.Translate("Value.NotAvailable.Text"),
 				_localizationService.Translate("Film.EpisodeLabel.Text")))
+			// FR-003: ascending by episode number, applied here rather than relying on the
+			// order the source returns - sorted on the int, never on the display label (M6).
+			.OrderBy(item => item.EpisodeNumber)
 			.ToList();
 
 		Films.Clear();
