@@ -250,4 +250,93 @@ public class FilmDetailsViewModelTests
 		busies.ShouldBe(dones, ignoreOrder: true);
 		busies.Distinct().Count().ShouldBe(2, "the film and character loads must use distinct progress messages");
 	}
+
+	// T11/T12 for the FILM load specifically.
+	[Fact]
+	public async Task OnNavigatedToAsync_retries_the_film_load_and_succeeds_on_the_second_attempt()
+	{
+		var attempt = 0;
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmAsync("1").Returns<Task<FilmDto>>(_ =>
+		{
+			attempt++;
+			if (attempt == 1)
+			{
+				throw new InvalidOperationException("first attempt fails");
+			}
+			return Task.FromResult(FilmWithCharacters());
+		});
+		service.GetCharactersAsync(Arg.Any<IReadOnlyList<string>>())
+			.Returns(new CharacterLoadResult(Array.Empty<PersonDto>(), 0, 0));
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		userInteraction.ShowRetryDialogAsync().Returns(RetryDialogResult.Retry);
+		var sut = CreateSut(service, userInteractionService: userInteraction);
+
+		await sut.OnNavigatedToAsync("1");
+
+		attempt.ShouldBe(2);
+		sut.FilmState.ShouldBe(PageLoadState.Loaded);
+	}
+
+	// The on-page retry for the FILM, after cancelling into the error state.
+	[Fact]
+	public async Task RetryFilmCommand_reloads_the_film_after_the_user_cancelled_into_the_error_state()
+	{
+		var attempt = 0;
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmAsync("1").Returns<Task<FilmDto>>(_ =>
+		{
+			attempt++;
+			if (attempt == 1)
+			{
+				throw new InvalidOperationException("first load fails");
+			}
+			return Task.FromResult(FilmWithCharacters());
+		});
+		service.GetCharactersAsync(Arg.Any<IReadOnlyList<string>>())
+			.Returns(new CharacterLoadResult(Array.Empty<PersonDto>(), 0, 0));
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		userInteraction.ShowRetryDialogAsync().Returns(RetryDialogResult.Cancel);
+		var sut = CreateSut(service, userInteractionService: userInteraction);
+
+		await sut.OnNavigatedToAsync("1");
+		sut.FilmState.ShouldBe(PageLoadState.Error);
+
+		await sut.RetryFilmCommand.ExecuteAsync(null);
+
+		sut.FilmState.ShouldBe(PageLoadState.Loaded);
+	}
+
+	// The on-page retry for the CHARACTERS, which must NOT re-request the film - the film is
+	// already on screen and re-fetching it would be wasted work and a visible flicker.
+	[Fact]
+	public async Task RetryCharactersCommand_reloads_only_the_characters_and_does_not_refetch_the_film()
+	{
+		var characterAttempt = 0;
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmAsync("1").Returns(FilmWithCharacters("u/1"));
+		service.GetCharactersAsync(Arg.Any<IReadOnlyList<string>>()).Returns<Task<CharacterLoadResult>>(_ =>
+		{
+			characterAttempt++;
+			if (characterAttempt == 1)
+			{
+				throw new InvalidOperationException("characters fail first time");
+			}
+			return Task.FromResult(new CharacterLoadResult(new[] { Person("Luke Skywalker", 1) }, 1, 0));
+		});
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		userInteraction.ShowRetryDialogAsync().Returns(RetryDialogResult.Cancel);
+		var sut = CreateSut(service, userInteractionService: userInteraction);
+
+		await sut.OnNavigatedToAsync("1");
+		sut.FilmState.ShouldBe(PageLoadState.Loaded);
+		sut.CharactersState.ShouldBe(PageLoadState.Error);
+
+		await sut.RetryCharactersCommand.ExecuteAsync(null);
+
+		sut.CharactersState.ShouldBe(PageLoadState.Loaded);
+		sut.Characters.Count.ShouldBe(1);
+		// The film was fetched exactly once, by the original navigation - never again.
+		await service.Received(1).GetFilmAsync("1");
+	}
 }
