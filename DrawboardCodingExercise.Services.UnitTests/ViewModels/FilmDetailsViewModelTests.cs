@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DrawboardCodingExercise.Contracts.Services;
 using DrawboardCodingExercise.Services.StarWars;
+using DrawboardCodingExercise.Services.StarWars.Dtos;
 using DrawboardCodingExercise.Services.UnitTests.TestDoubles;
 using DrawboardCodingExercise.ViewModel;
 using NSubstitute;
@@ -69,5 +71,67 @@ public class FilmDetailsViewModelTests
 
 		sut.FilmState.ShouldBe(PageLoadState.InvalidSelection);
 		await service.DidNotReceive().GetFilmAsync(Arg.Any<string>());
+	}
+
+	// T6: a valid id loads and exposes all six required fields.
+	[Fact]
+	public async Task OnNavigatedToAsync_with_a_valid_id_loads_and_exposes_the_required_fields()
+	{
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmAsync("1").Returns(new FilmDto
+		{
+			Title = "A New Hope",
+			EpisodeId = 4,
+			Director = "George Lucas",
+			Producer = "Gary Kurtz, Rick McCallum",
+			OpeningCrawl = "It is a period of civil war.",
+			ReleaseDate = "1977-05-25",
+			Characters = new List<string>(),
+			Url = "https://swapi.info/api/films/1"
+		});
+		var sut = CreateSut(service);
+
+		await sut.OnNavigatedToAsync("1");
+
+		sut.FilmState.ShouldBe(PageLoadState.Loaded);
+		sut.Film.ShouldNotBeNull();
+		sut.Film!.Title.ShouldBe("A New Hope");
+		sut.Film.EpisodeNumber.ShouldBe(4);
+		sut.Film.Director.ShouldBe("George Lucas");
+		sut.Film.Producer.ShouldBe("Gary Kurtz, Rick McCallum");
+		sut.Film.OpeningCrawl.ShouldBe("It is a period of civil war.");
+		sut.Film.ReleaseDateDisplay.ShouldNotBeNullOrWhiteSpace();
+	}
+
+	// T10: a 404 (service returns null) is an invalid selection, not a retryable failure - no
+	// retry/cancel prompt is ever shown, because retrying an unknown id can never succeed.
+	[Fact]
+	public async Task OnNavigatedToAsync_with_an_unknown_id_yields_invalid_selection_without_a_retry_prompt()
+	{
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmAsync("99").Returns((FilmDto)null);
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		var sut = CreateSut(service, userInteractionService: userInteraction);
+
+		await sut.OnNavigatedToAsync("99");
+
+		sut.FilmState.ShouldBe(PageLoadState.InvalidSelection);
+		await userInteraction.DidNotReceive().ShowRetryDialogAsync();
+	}
+
+	// T17: OnNavigatedToAsync must never propagate, even when the service always fails and the
+	// user cancels the retry prompt.
+	[Fact]
+	public async Task OnNavigatedToAsync_never_propagates_an_exception()
+	{
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmAsync(Arg.Any<string>()).Returns<Task<FilmDto>>(_ => throw new InvalidOperationException("boom"));
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		userInteraction.ShowRetryDialogAsync().Returns(RetryDialogResult.Cancel);
+		var sut = CreateSut(service, userInteractionService: userInteraction);
+
+		await Should.NotThrowAsync(() => sut.OnNavigatedToAsync("1"));
+
+		sut.FilmState.ShouldBe(PageLoadState.Error);
 	}
 }
