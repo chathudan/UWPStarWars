@@ -175,7 +175,7 @@ A change is not complete until:
 
 - the solution builds
 - automated tests pass
-- TDD evidance exists for non-trival production behaviour
+- TDD evidence exists for non-trivial production behavior
 - both pages can be manually exercised
 - API success and failure paths are checked
 - navigation and back navigation work
