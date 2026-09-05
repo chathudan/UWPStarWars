@@ -175,8 +175,37 @@ A change is not complete until:
 
 - the solution builds
 - automated tests pass
+- TDD evidance exists for non-trival production behaviour
 - both pages can be manually exercised
 - API success and failure paths are checked
 - navigation and back navigation work
 - loading/progress state clears correctly
 - README is updated
+
+## XV. Test-Driven Development
+
+All non-trivial production behavior MUST be developed test-first.
+
+Before implementing ViewModel logic, API service behavior, mapping logic, navigation decisions, retry/cancel behavior, error-state handling, empty-state handling, or busy/progress cleanup, a failing automated test MUST be written or updated to describe the expected behavior.
+
+Implementation MUST follow the red-green-refactor cycle:
+
+1. Red: write a focused failing test for the behavior.
+2. Green: implement the smallest production change that makes the test pass.
+3. Refactor: improve structure, naming, and duplication while keeping tests passing.
+
+TDD is mandatory for:
+
+- API service response handling
+- DTO-to-domain or DTO-to-display mapping
+- film list sorting
+- ViewModel loading, loaded, empty, and error states
+- film selection navigation
+- detail page navigation parameter handling
+- retry/cancel API failure behavior
+- `NotifyBusyEvent` / `NotifyDoneEvent` cleanup
+- malformed, null, partial, or empty API responses
+
+Pure XAML layout changes, resource text changes, README updates, app manifest changes, and mechanical Autofac/PageKey registrations MAY be implemented without test-first development, but they MUST still be manually validated.
+
+No production behavior is complete unless it has a corresponding automated test or a documented reason why automated testing is not practical in this UWP exercise.
