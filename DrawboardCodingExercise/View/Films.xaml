@@ -18,13 +18,11 @@
 		              HorizontalAlignment="Left" VerticalAlignment="Top"
 		              Width="32" Height="32" />
 
-		<TextBlock x:Uid="Films.Empty"
-		           d:Text="No films are available right now."
+		<TextBlock Text="{Binding EmptyMessage}"
 		           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
 		           HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-		<TextBlock x:Uid="Films.Error"
-		           d:Text="We couldn't load the films."
+		<TextBlock Text="{Binding ErrorMessage}"
 		           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
 		           HorizontalAlignment="Left" VerticalAlignment="Top" />
 

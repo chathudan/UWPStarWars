@@ -18,33 +18,34 @@
 		              HorizontalAlignment="Left" VerticalAlignment="Top"
 		              Width="32" Height="32" />
 
-		<TextBlock x:Uid="FilmDetails.InvalidSelection"
-		           d:Text="This film could not be opened. Please go back and select another film."
+		<TextBlock Text="{Binding InvalidSelectionMessage}"
 		           Visibility="{Binding IsInvalidSelection, Converter={StaticResource BoolToVisibilityConverter}}"
 		           TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-		<TextBlock x:Uid="FilmDetails.Error"
-		           d:Text="We couldn't load this film."
+		<TextBlock Text="{Binding ErrorMessage}"
 		           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
 		           HorizontalAlignment="Left" VerticalAlignment="Top" />
 
 		<ScrollViewer Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibilityConverter}}"
 		              VerticalScrollBarVisibility="Auto">
-			<StackPanel DataContext="{Binding Film}" MaxWidth="720" HorizontalAlignment="Left">
-				<TextBlock Text="{Binding Title}" Style="{StaticResource SubtitleTextBlockStyle}" />
-				<TextBlock Text="{Binding EpisodeLabel}" Opacity="0.7" Margin="0,0,0,12" />
+			<!-- DataContext deliberately left as the page ViewModel (not rebound to Film) so the
+			     label TextBlocks below can bind directly to the ViewModel's localized *Label
+			     properties; each data field is instead prefixed with "Film." -->
+			<StackPanel MaxWidth="720" HorizontalAlignment="Left">
+				<TextBlock Text="{Binding Film.Title}" Style="{StaticResource SubtitleTextBlockStyle}" />
+				<TextBlock Text="{Binding Film.EpisodeLabel}" Opacity="0.7" Margin="0,0,0,12" />
 
-				<TextBlock x:Uid="FilmDetails.ReleaseDate" d:Text="Release Date" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding ReleaseDateDisplay}" Margin="0,0,0,12" />
+				<TextBlock Text="{Binding ReleaseDateLabel}" FontWeight="SemiBold" />
+				<TextBlock Text="{Binding Film.ReleaseDateDisplay}" Margin="0,0,0,12" />
 
-				<TextBlock x:Uid="FilmDetails.Director" d:Text="Director" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding Director}" Margin="0,0,0,12" />
+				<TextBlock Text="{Binding DirectorLabel}" FontWeight="SemiBold" />
+				<TextBlock Text="{Binding Film.Director}" Margin="0,0,0,12" />
 
-				<TextBlock x:Uid="FilmDetails.Producer" d:Text="Producer" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding Producer}" Margin="0,0,0,12" />
+				<TextBlock Text="{Binding ProducerLabel}" FontWeight="SemiBold" />
+				<TextBlock Text="{Binding Film.Producer}" Margin="0,0,0,12" />
 
-				<TextBlock x:Uid="FilmDetails.OpeningCrawl" d:Text="Opening Crawl" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding OpeningCrawl}" TextWrapping="Wrap" Margin="0,0,0,12" />
+				<TextBlock Text="{Binding OpeningCrawlLabel}" FontWeight="SemiBold" />
+				<TextBlock Text="{Binding Film.OpeningCrawl}" TextWrapping="Wrap" Margin="0,0,0,12" />
 			</StackPanel>
 		</ScrollViewer>
 	</Grid>

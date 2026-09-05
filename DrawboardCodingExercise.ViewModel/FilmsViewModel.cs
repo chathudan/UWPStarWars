@@ -37,6 +37,15 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 	public bool HasError => State == PageLoadState.Error;
 	public bool IsLoaded => State == PageLoadState.Loaded;
 
+	// Resolved via ILocalizationService directly rather than XAML x:Uid: the only proven x:Uid
+	// usage in this app (PageA's "NavigatedToPageA") has a single, undotted segment, and the
+	// PageHeader convention that DOES use dotted keys resolves them itself via an explicit
+	// ResourceLoader call (PageHeaderValueConverter), never through x:Uid's own resolution.
+	// Binding directly to a ViewModel property sidesteps that untested x:Uid/dotted-key
+	// combination entirely.
+	public string EmptyMessage => _localizationService.Translate("Films.Empty.Text");
+	public string ErrorMessage => _localizationService.Translate("Films.Error.Text");
+
 	public FilmsViewModel(
 		IStarWarsService starWarsService,
 		IEventAggregator eventAggregator,

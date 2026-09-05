@@ -36,6 +36,15 @@ public partial class FilmDetailsViewModel : PageViewModelBase, INavigateToAware,
 	public bool IsInvalidSelection => FilmState == PageLoadState.InvalidSelection;
 	public bool IsLoaded => FilmState == PageLoadState.Loaded;
 
+	// Resolved via ILocalizationService directly rather than XAML x:Uid - see the identical
+	// note on FilmsViewModel.EmptyMessage/ErrorMessage for why.
+	public string InvalidSelectionMessage => _localizationService.Translate("FilmDetails.InvalidSelection.Text");
+	public string ErrorMessage => _localizationService.Translate("FilmDetails.Error.Text");
+	public string ReleaseDateLabel => _localizationService.Translate("FilmDetails.ReleaseDate.Label");
+	public string DirectorLabel => _localizationService.Translate("FilmDetails.Director.Label");
+	public string ProducerLabel => _localizationService.Translate("FilmDetails.Producer.Label");
+	public string OpeningCrawlLabel => _localizationService.Translate("FilmDetails.OpeningCrawl.Label");
+
 	public FilmDetailsViewModel(
 		IStarWarsService starWarsService,
 		IEventAggregator eventAggregator,
