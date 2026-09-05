@@ -14,5 +14,7 @@
   <Project Path="DrawboardCodingExercise/DrawboardCodingExercise.csproj" DefaultStartup="true" Id="5fd44ffe-8199-4ede-bf19-433428625058">
     <Platform Solution="*|ARM64" Project="ARM64" />
     <Platform Solution="*|x64" Project="x64" />
+    <!-- Without this, F5 builds the UWP app but skips deployment, so nothing launches. -->
+    <Deploy />
   </Project>
 </Solution>
