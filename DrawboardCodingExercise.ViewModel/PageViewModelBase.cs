@@ -19,10 +19,12 @@ namespace DrawboardCodingExercise.ViewModel;
 public abstract class PageViewModelBase : ObservableObject
 {
 	private readonly IEventAggregator _eventAggregator;
+	private readonly IUserInteractionService _userInteractionService;
 
-	protected PageViewModelBase(IEventAggregator eventAggregator)
+	protected PageViewModelBase(IEventAggregator eventAggregator, IUserInteractionService userInteractionService)
 	{
 		_eventAggregator = eventAggregator;
+		_userInteractionService = userInteractionService;
 	}
 
 	/// <summary>
@@ -43,6 +45,34 @@ public abstract class PageViewModelBase : ObservableObject
 		finally
 		{
 			_eventAggregator.Post(new NotifyDoneEvent(message));
+		}
+	}
+
+	/// <summary>
+	/// Runs <paramref name="work"/> via <see cref="RunBusyAsync"/>; on failure, offers
+	/// retry/cancel through <see cref="IUserInteractionService"/>. Retry re-attempts the whole
+	/// operation (a fresh busy/done pair per attempt); Cancel stops the loop and returns
+	/// <c>false</c> so the caller can render its error state. Returns <c>true</c> on success.
+	/// </summary>
+	protected async Task<bool> RunWithRetryAsync(string busyMessage, Func<Task> work)
+	{
+		while (true)
+		{
+			try
+			{
+				await RunBusyAsync(busyMessage, work).ConfigureAwait(true);
+				return true;
+			}
+			catch (Exception)
+			{
+				var choice = await _userInteractionService.ShowRetryDialogAsync().ConfigureAwait(true);
+				if (choice == RetryDialogResult.Cancel)
+				{
+					return false;
+				}
+
+				// Retry: loop back for a fresh attempt, with its own busy/done pair.
+			}
 		}
 	}
 }
