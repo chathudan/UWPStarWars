@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using DrawboardCodingExercise.Services.StarWars.Dtos;
 using Serilog;
@@ -63,9 +64,24 @@ public class StarWarsService : IStarWarsService
 		return await operationTask.ConfigureAwait(false);
 	}
 
-	public Task<FilmDto> GetFilmAsync(string filmId)
+	public async Task<FilmDto> GetFilmAsync(string filmId)
 	{
-		throw new NotImplementedException();
+		try
+		{
+			return await WithBudgetAsync(() => _apiClient.GetAsync<FilmDto>($"films/{filmId}")).ConfigureAwait(false);
+		}
+		catch (HttpStatusException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+		{
+			// The identifier is wrong; no retry can fix that (FR-013, V4). This is an
+			// invalid-selection outcome for the caller, not a recoverable failure.
+			_logger.Warning("No Star Wars film was found for identifier {FilmId}", filmId);
+			return null;
+		}
+		catch (Exception ex)
+		{
+			_logger.Error(ex, "Failed to retrieve Star Wars film {FilmId}", filmId);
+			throw;
+		}
 	}
 
 	public Task<CharacterLoadResult> GetCharactersAsync(IReadOnlyList<string> characterUrls)
