@@ -195,13 +195,13 @@ Six existing projects, no new ones:
 
 > Sample retirement happens **last** so the solution compiles and the suite stays green through every TDD cycle. Removing `PageKey` members earlier would break `NavigationModule` and `ShellViewModel` before their replacements existed.
 
-- [ ] T063 [P] Delete `DrawboardCodingExercise/View/Welcome.xaml`, `Welcome.xaml.cs`, `PageA.xaml` and `PageA.xaml.cs`
-- [ ] T064 [P] Delete `DrawboardCodingExercise.ViewModel/WelcomeViewModel.cs` and `DrawboardCodingExercise.ViewModel/PageAViewModel.cs`
-- [ ] T065 Remove the `Welcome` and `PageA` members from `DrawboardCodingExercise.Contracts/PageKey.cs`
-- [ ] T066 Remove the sample `RegisterView` calls from `DrawboardCodingExercise/Module/NavigationModule.cs`
-- [ ] T067 Remove the `Welcome` and `PageA` `<Compile>` and `<Page>` entries from `DrawboardCodingExercise/DrawboardCodingExercise.csproj`
-- [ ] T068 Remove `NavigatedToPageA.Text`, `PageHeader.PageA.Text` and `PageHeader.Welcome.Text` from `DrawboardCodingExercise/Strings/en/Resources.resw`
-- [ ] T069 Build `DrawboardCodingExercise/DrawboardCodingExercise.csproj` for x64 with MSBuild and confirm `dotnet test DrawboardCodingExercise.Services.UnitTests/DrawboardCodingExercise.Services.UnitTests.csproj` is green with the network disabled
+- [X] T063 [P] Delete `DrawboardCodingExercise/View/Welcome.xaml`, `Welcome.xaml.cs`, `PageA.xaml` and `PageA.xaml.cs`
+- [X] T064 [P] Delete `DrawboardCodingExercise.ViewModel/WelcomeViewModel.cs` and `DrawboardCodingExercise.ViewModel/PageAViewModel.cs`
+- [X] T065 Remove the `Welcome` and `PageA` members from `DrawboardCodingExercise.Contracts/PageKey.cs`
+- [X] T066 Remove the sample `RegisterView` calls from `DrawboardCodingExercise/Module/NavigationModule.cs`
+- [X] T067 Remove the `Welcome` and `PageA` `<Compile>` and `<Page>` entries from `DrawboardCodingExercise/DrawboardCodingExercise.csproj`
+- [X] T068 Remove `NavigatedToPageA.Text`, `PageHeader.PageA.Text` and `PageHeader.Welcome.Text` from `DrawboardCodingExercise/Strings/en/Resources.resw`
+- [X] T069 Build `DrawboardCodingExercise/DrawboardCodingExercise.csproj` for x64 with MSBuild and confirm `dotnet test DrawboardCodingExercise.Services.UnitTests/DrawboardCodingExercise.Services.UnitTests.csproj` is green with the network disabled
 > **All candidate-authored documentation goes in `SOLUTION.md` at the repository root. `README.md` is the supplied Drawboard exercise brief and MUST NOT be modified** — it states the problem, and editing it would overwrite the question with the answer. The ten required sections are specified in [plan.md](./plan.md) § Documentation Deliverable; tasks T070–T075 write them in order.
 
 - [ ] T070 Create `SOLUTION.md` at the repository root with sections 1–4: chosen API (Star Wars Movies API, why it was chosen, and the verified response shapes including the id-vs-episode trap), architecture decisions, assumptions, and limitations

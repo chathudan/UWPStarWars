@@ -37,12 +37,12 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 	public bool HasError => State == PageLoadState.Error;
 	public bool IsLoaded => State == PageLoadState.Loaded;
 
-	// Resolved via ILocalizationService directly rather than XAML x:Uid: the only proven x:Uid
-	// usage in this app (PageA's "NavigatedToPageA") has a single, undotted segment, and the
-	// PageHeader convention that DOES use dotted keys resolves them itself via an explicit
-	// ResourceLoader call (PageHeaderValueConverter), never through x:Uid's own resolution.
-	// Binding directly to a ViewModel property sidesteps that untested x:Uid/dotted-key
-	// combination entirely.
+	// Resolved via ILocalizationService directly rather than XAML x:Uid. A dotted x:Uid
+	// (e.g. x:Uid="Films.Error") does NOT resolve against a dotted .resw key at runtime - it
+	// was tried and the text silently rendered blank. The one dotted-key convention that does
+	// work here (PageHeader.*) resolves it explicitly via ResourceLoader in
+	// PageHeaderValueConverter, never through x:Uid. Binding to a ViewModel property that calls
+	// ILocalizationService follows that same proven path.
 	public string EmptyMessage => _localizationService.Translate("Films.Empty.Text");
 	public string ErrorMessage => _localizationService.Translate("Films.Error.Text");
 	public string RetryLabel => _localizationService.Translate("Common.RetryButton.Content");

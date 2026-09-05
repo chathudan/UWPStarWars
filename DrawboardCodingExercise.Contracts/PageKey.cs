@@ -2,9 +2,6 @@
 
 public enum PageKey
 {
-	Welcome,
-	PageA,
-
 	/// <summary>Page 1 - the list of Star Wars films. The application's startup page.</summary>
 	Films,
 

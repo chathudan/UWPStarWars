@@ -19,8 +19,6 @@ public class NavigationModule : Autofac.Module
 		builder.RegisterType<Shell>().AsSelf();
 		builder.RegisterType<ShellViewModel>().AsSelf();
 
-		builder.RegisterView<Welcome, WelcomeViewModel>(PageKey.Welcome);
-		builder.RegisterView<PageA, PageAViewModel>(PageKey.PageA);
 		builder.RegisterView<Films, FilmsViewModel>(PageKey.Films);
 		builder.RegisterView<FilmDetails, FilmDetailsViewModel>(PageKey.FilmDetails);
 	}

@@ -126,15 +126,6 @@
   <data name="Errors.Retry" xml:space="preserve">
     <value>There was an error while retrieving your data. Would you like to try again?</value>
   </data>
-  <data name="NavigatedToPageA.Text" xml:space="preserve">
-    <value>You have navigated to Page A</value>
-  </data>
-  <data name="PageHeader.PageA.Text" xml:space="preserve">
-    <value>Page A</value>
-  </data>
-  <data name="PageHeader.Welcome.Text" xml:space="preserve">
-    <value>Welcome</value>
-  </data>
   <data name="PageHeader.Films.Text" xml:space="preserve">
     <value>Films</value>
   </data>
