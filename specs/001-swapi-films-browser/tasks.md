@@ -39,14 +39,14 @@ Six existing projects, no new ones:
 
 > **`PageKey` only gains members here and loses none.** Removing `Welcome`/`PageA` now would break `NavigationModule`, `ShellViewModel` and both sample ViewModels before their replacements exist. A suite that will not compile makes every subsequent red meaningless, so the samples are retired in Phase 7 once the real pages work. Keeping the build green between cycles is a TDD requirement, not tidiness.
 
-- [ ] T001 Commit the starter plus the `specs/` planning artifacts as the TDD evidence baseline, so the cycle commits that follow are demonstrably test-first (repo root, `git commit`)
-- [ ] T002 Add `<ProjectReference Include="..\DrawboardCodingExercise.Services\DrawboardCodingExercise.Services.csproj" />` to `DrawboardCodingExercise.ViewModel/DrawboardCodingExercise.ViewModel.csproj`
-- [ ] T003 Add `<ProjectReference Include="..\DrawboardCodingExercise.ViewModel\DrawboardCodingExercise.ViewModel.csproj" />` to `DrawboardCodingExercise.Services.UnitTests/DrawboardCodingExercise.Services.UnitTests.csproj`
-- [ ] T004 [P] Add `Films` and `FilmDetails` members to `DrawboardCodingExercise.Contracts/PageKey.cs`, keeping `Welcome` and `PageA` for now
-- [ ] T005 [P] Change `ServerAddress` to `https://swapi.info/api` in `DrawboardCodingExercise/Configuration/ApplicationConfiguration.cs`
-- [ ] T006 [P] Add captured real SWAPI payloads (snake_case, exactly as the API returns them) as string constants in `DrawboardCodingExercise.Services.UnitTests/TestData/SwapiPayloads.cs`
-- [ ] T007 [P] Add DTO and display-model builders for arranging test data in `DrawboardCodingExercise.Services.UnitTests/TestDoubles/Builders.cs`
-- [ ] T008 Verify the baseline is green by running `dotnet test DrawboardCodingExercise.Services.UnitTests/DrawboardCodingExercise.Services.UnitTests.csproj`
+- [X] T001 Commit the starter plus the `specs/` planning artifacts as the TDD evidence baseline, so the cycle commits that follow are demonstrably test-first (repo root, `git commit`)
+- [X] T002 Add `<ProjectReference Include="..\DrawboardCodingExercise.Services\DrawboardCodingExercise.Services.csproj" />` to `DrawboardCodingExercise.ViewModel/DrawboardCodingExercise.ViewModel.csproj`
+- [X] T003 Add `<ProjectReference Include="..\DrawboardCodingExercise.ViewModel\DrawboardCodingExercise.ViewModel.csproj" />` to `DrawboardCodingExercise.Services.UnitTests/DrawboardCodingExercise.Services.UnitTests.csproj`
+- [X] T004 [P] Add `Films` and `FilmDetails` members to `DrawboardCodingExercise.Contracts/PageKey.cs`, keeping `Welcome` and `PageA` for now
+- [X] T005 [P] Change `ServerAddress` to `https://swapi.info/api` in `DrawboardCodingExercise/Configuration/ApplicationConfiguration.cs`
+- [X] T006 [P] Add captured real SWAPI payloads (snake_case, exactly as the API returns them) as string constants in `DrawboardCodingExercise.Services.UnitTests/TestData/SwapiPayloads.cs`
+- [X] T007 [P] Add DTO and display-model builders for arranging test data in `DrawboardCodingExercise.Services.UnitTests/TestDoubles/Builders.cs`
+- [X] T008 Verify the baseline is green by running `dotnet test DrawboardCodingExercise.Services.UnitTests/DrawboardCodingExercise.Services.UnitTests.csproj`
 
 **Checkpoint**: ViewModels are reachable from tests. Nothing in the app has changed behaviour yet.
 
@@ -60,24 +60,24 @@ Six existing projects, no new ones:
 
 ### Cycle 1 — URL normalisation
 
-- [ ] T009 **RED** Stub `SwapiResourcePath.ToRelativePath` and `ExtractId` (signatures only, `NotImplementedException`) in `DrawboardCodingExercise.Services/StarWars/SwapiResourcePath.cs`, then write failing tests T30 and T31 in `DrawboardCodingExercise.Services.UnitTests/StarWars/SwapiResourcePathTests.cs`
-- [ ] T010 **GREEN** Implement `ToRelativePath` and `ExtractId` in `DrawboardCodingExercise.Services/StarWars/SwapiResourcePath.cs` — case-insensitive base match, tolerant of trailing slashes, returning `null` rather than throwing
+- [X] T009 **RED** Stub `SwapiResourcePath.ToRelativePath` and `ExtractId` (signatures only, `NotImplementedException`) in `DrawboardCodingExercise.Services/StarWars/SwapiResourcePath.cs`, then write failing tests T30 and T31 in `DrawboardCodingExercise.Services.UnitTests/StarWars/SwapiResourcePathTests.cs`
+- [X] T010 **GREEN** Implement `ToRelativePath` and `ExtractId` in `DrawboardCodingExercise.Services/StarWars/SwapiResourcePath.cs` — case-insensitive base match, tolerant of trailing slashes, returning `null` rather than throwing
 
 ### Cycle 2 — DTOs and display mapping
 
-- [ ] T011 [P] Create `FilmDto` with an explicit `[JsonProperty]` on **every** property in `DrawboardCodingExercise.Services/StarWars/Dtos/FilmDto.cs` (`ReleaseDate` is `string`, not `DateTime` — see [data-model.md](./data-model.md) §1)
-- [ ] T012 [P] Create `PersonDto` with explicit `[JsonProperty]` on `name` and `url` in `DrawboardCodingExercise.Services/StarWars/Dtos/PersonDto.cs`
-- [ ] T013 [P] Create the `FilmListItem` display model in `DrawboardCodingExercise.ViewModel/Models/FilmListItem.cs`
-- [ ] T014 [P] Create the `FilmDetailsDisplay` display model in `DrawboardCodingExercise.ViewModel/Models/FilmDetailsDisplay.cs`
-- [ ] T015 [P] Create the `CharacterListItem` display model in `DrawboardCodingExercise.ViewModel/Models/CharacterListItem.cs`
-- [ ] T016 **RED** Stub `FilmMapper` in `DrawboardCodingExercise.ViewModel/Models/FilmMapper.cs`, then write failing tests T26–T29 in `DrawboardCodingExercise.Services.UnitTests/Mapping/FilmMapperTests.cs`, asserting against the captured payload from T006 rather than a hand-written camel-case fixture
-- [ ] T017 **GREEN** Implement mapping rules M1–M6 in `DrawboardCodingExercise.ViewModel/Models/FilmMapper.cs` — id from `url` only, placeholders for blank text, non-throwing date parse, no sorting
+- [X] T011 [P] Create `FilmDto` with an explicit `[JsonProperty]` on **every** property in `DrawboardCodingExercise.Services/StarWars/Dtos/FilmDto.cs` (`ReleaseDate` is `string`, not `DateTime` — see [data-model.md](./data-model.md) §1)
+- [X] T012 [P] Create `PersonDto` with explicit `[JsonProperty]` on `name` and `url` in `DrawboardCodingExercise.Services/StarWars/Dtos/PersonDto.cs`
+- [X] T013 [P] Create the `FilmListItem` display model in `DrawboardCodingExercise.ViewModel/Models/FilmListItem.cs`
+- [X] T014 [P] Create the `FilmDetailsDisplay` display model in `DrawboardCodingExercise.ViewModel/Models/FilmDetailsDisplay.cs`
+- [X] T015 [P] Create the `CharacterListItem` display model in `DrawboardCodingExercise.ViewModel/Models/CharacterListItem.cs`
+- [X] T016 **RED** Stub `FilmMapper` in `DrawboardCodingExercise.ViewModel/Models/FilmMapper.cs`, then write failing tests T26–T29 in `DrawboardCodingExercise.Services.UnitTests/Mapping/FilmMapperTests.cs`, asserting against the captured payload from T006 rather than a hand-written camel-case fixture
+- [X] T017 **GREEN** Implement mapping rules M1–M6 in `DrawboardCodingExercise.ViewModel/Models/FilmMapper.cs` — id from `url` only, placeholders for blank text, non-throwing date parse, no sorting
 
 ### Cycle 3 — Film list retrieval and failure modes
 
-- [ ] T018 Define `IStarWarsService` and `CharacterLoadResult` per [contracts/IStarWarsService.md](./contracts/IStarWarsService.md) in `DrawboardCodingExercise.Services/StarWars/IStarWarsService.cs`
-- [ ] T019 **RED** Stub `StarWarsService` (constructor taking `IAPIClient`, `IAPISettings`, `ILogger` and an injectable budget `TimeSpan`) in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs`, then write failing tests T24, T25, T32 and T35 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceFilmsTests.cs`
-- [ ] T020 **GREEN** Implement `GetFilmsAsync` in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs` — bare-array deserialization, null or empty yields an empty list, non-success and malformed bodies propagate, failures logged at `Error`
+- [X] T018 Define `IStarWarsService` and `CharacterLoadResult` per [contracts/IStarWarsService.md](./contracts/IStarWarsService.md) in `DrawboardCodingExercise.Services/StarWars/IStarWarsService.cs`
+- [X] T019 **RED** Stub `StarWarsService` (constructor taking `IAPIClient`, `IAPISettings`, `ILogger` and an injectable budget `TimeSpan`) in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs`, then write failing tests T24, T25, T32 and T35 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceFilmsTests.cs`
+- [X] T020 **GREEN** Implement `GetFilmsAsync` in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs` — bare-array deserialization, null or empty yields an empty list, non-success and malformed bodies propagate, failures logged at `Error`
 
 ### Cycle 4 — Request budget
 
