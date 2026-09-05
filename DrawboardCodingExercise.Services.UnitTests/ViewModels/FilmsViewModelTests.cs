@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DrawboardCodingExercise.Contracts.Services;
 using DrawboardCodingExercise.Services.StarWars;
@@ -110,6 +111,25 @@ public class FilmsViewModelTests
 		var busy = aggregator.Posted[0].ShouldBeOfType<DrawboardCodingExercise.Contracts.Events.NotifyBusyEvent>();
 		var done = aggregator.Posted[1].ShouldBeOfType<DrawboardCodingExercise.Contracts.Events.NotifyDoneEvent>();
 		busy.Event.ShouldBe(done.Event);
+	}
+
+	// T2: films are presented ascending by episode number, applied by the ViewModel itself -
+	// never relying on the order the source happens to return them in.
+	[Fact]
+	public async Task OnNavigatedToAsync_orders_films_ascending_by_episode_number_from_an_unordered_response()
+	{
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmsAsync().Returns(new List<FilmDto>
+		{
+			Film("Return of the Jedi", 6, "3"),
+			Film("A New Hope", 4, "1"),
+			Film("The Empire Strikes Back", 5, "2")
+		});
+		var sut = CreateSut(service);
+
+		await sut.OnNavigatedToAsync(null);
+
+		sut.Films.Select(f => f.EpisodeNumber).ShouldBe(new[] { 4, 5, 6 });
 	}
 
 	[Fact]
