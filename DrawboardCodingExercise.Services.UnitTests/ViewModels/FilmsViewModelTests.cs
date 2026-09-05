@@ -180,4 +180,83 @@ public class FilmsViewModelTests
 
 		await navigationService.DidNotReceive().NavigateAsync(Arg.Any<PageKey>(), Arg.Any<object>());
 	}
+
+	// T11 against the real ViewModel: a failure prompts retry/cancel, and choosing Retry
+	// re-attempts and succeeds once the source recovers.
+	[Fact]
+	public async Task OnNavigatedToAsync_retries_and_succeeds_on_the_second_attempt()
+	{
+		var attempt = 0;
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmsAsync().Returns<Task<IReadOnlyList<FilmDto>>>(_ =>
+		{
+			attempt++;
+			if (attempt == 1)
+			{
+				throw new InvalidOperationException("first attempt fails");
+			}
+			return Task.FromResult<IReadOnlyList<FilmDto>>(new List<FilmDto> { Film("A New Hope", 4, "1") });
+		});
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		userInteraction.ShowRetryDialogAsync().Returns(RetryDialogResult.Retry);
+		var sut = CreateSut(service, userInteractionService: userInteraction);
+
+		await sut.OnNavigatedToAsync(null);
+
+		attempt.ShouldBe(2);
+		await userInteraction.Received(1).ShowRetryDialogAsync();
+		sut.State.ShouldBe(PageLoadState.Loaded);
+		sut.Films.Count.ShouldBe(1);
+	}
+
+	// T12 against the real ViewModel: choosing Cancel leaves a readable error state, with
+	// progress cleared rather than left spinning.
+	[Fact]
+	public async Task OnNavigatedToAsync_yields_the_error_state_and_clears_progress_when_cancelled()
+	{
+		var aggregator = new RecordingEventAggregator();
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmsAsync().Returns<Task<IReadOnlyList<FilmDto>>>(_ => throw new InvalidOperationException("boom"));
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		userInteraction.ShowRetryDialogAsync().Returns(RetryDialogResult.Cancel);
+		var sut = CreateSut(service, aggregator, userInteraction);
+
+		await sut.OnNavigatedToAsync(null);
+
+		sut.State.ShouldBe(PageLoadState.Error);
+		await userInteraction.Received(1).ShowRetryDialogAsync();
+
+		var busies = aggregator.Posted.OfType<DrawboardCodingExercise.Contracts.Events.NotifyBusyEvent>().Select(e => e.Event).ToList();
+		var dones = aggregator.Posted.OfType<DrawboardCodingExercise.Contracts.Events.NotifyDoneEvent>().Select(e => e.Event).ToList();
+		busies.ShouldBe(dones, ignoreOrder: true);
+	}
+
+	// The on-page retry affordance: after cancelling into the error state, the user can retry
+	// from the page itself and reach the normal populated view (FR-018).
+	[Fact]
+	public async Task RetryCommand_reloads_the_film_list_after_the_user_cancelled_into_the_error_state()
+	{
+		var attempt = 0;
+		var service = Substitute.For<IStarWarsService>();
+		service.GetFilmsAsync().Returns<Task<IReadOnlyList<FilmDto>>>(_ =>
+		{
+			attempt++;
+			if (attempt == 1)
+			{
+				throw new InvalidOperationException("first load fails");
+			}
+			return Task.FromResult<IReadOnlyList<FilmDto>>(new List<FilmDto> { Film("A New Hope", 4, "1") });
+		});
+		var userInteraction = Substitute.For<IUserInteractionService>();
+		userInteraction.ShowRetryDialogAsync().Returns(RetryDialogResult.Cancel);
+		var sut = CreateSut(service, userInteractionService: userInteraction);
+
+		await sut.OnNavigatedToAsync(null);
+		sut.State.ShouldBe(PageLoadState.Error);
+
+		await sut.RetryCommand.ExecuteAsync(null);
+
+		sut.State.ShouldBe(PageLoadState.Loaded);
+		sut.Films.Count.ShouldBe(1);
+	}
 }
