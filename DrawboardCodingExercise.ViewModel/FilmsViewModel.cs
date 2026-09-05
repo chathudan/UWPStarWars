@@ -65,8 +65,14 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 
 	public string PageHeader => "Films";
 
-	public async Task OnNavigatedToAsync(object parameter)
+	// The films list takes no navigation parameter, so navigating in and retrying from the page
+	// are the same operation.
+	public Task OnNavigatedToAsync(object parameter) => LoadAsync();
+
+	private async Task LoadAsync()
 	{
+		State = PageLoadState.Loading;
+
 		// NavigationService.NavigateAsync logs Fatal and rethrows anything that escapes here, so
 		// every failure must become a page state rather than propagate (contracts/navigation.md).
 		try
@@ -109,6 +115,13 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 
 		State = items.Count == 0 ? PageLoadState.Empty : PageLoadState.Loaded;
 	}
+
+	/// <summary>
+	/// The on-page retry affordance shown in the error state, distinct from the modal
+	/// retry/cancel prompt: it re-runs the whole load from scratch (FR-018).
+	/// </summary>
+	[RelayCommand]
+	private Task Retry() => LoadAsync();
 
 	[RelayCommand]
 	private Task SelectFilm(FilmListItem film)
