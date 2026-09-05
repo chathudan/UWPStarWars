@@ -43,6 +43,7 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 	// work here (PageHeader.*) resolves it explicitly via ResourceLoader in
 	// PageHeaderValueConverter, never through x:Uid. Binding to a ViewModel property that calls
 	// ILocalizationService follows that same proven path.
+	public string LoadingMessage => _localizationService.Translate("Progress.LoadingFilms.Text");
 	public string EmptyMessage => _localizationService.Translate("Films.Empty.Text");
 	public string ErrorMessage => _localizationService.Translate("Films.Error.Text");
 	public string RetryLabel => _localizationService.Translate("Common.RetryButton.Content");

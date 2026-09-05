@@ -12,33 +12,78 @@
 		<valueConverters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 	</Page.Resources>
 
-	<Grid Margin="16">
-		<ProgressRing IsActive="{Binding IsLoading}"
-		              Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
-		              HorizontalAlignment="Left" VerticalAlignment="Top"
-		              Width="32" Height="32" />
+	<!-- Named so the item template can reach the page's ViewModel for the selection command. -->
+	<Grid x:Name="RootGrid">
 
-		<TextBlock Text="{Binding EmptyMessage}"
-		           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
-		           HorizontalAlignment="Left" VerticalAlignment="Top" />
-
-		<StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
-		            HorizontalAlignment="Left" VerticalAlignment="Top">
-			<TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Margin="0,0,0,8" />
-			<Button Content="{Binding RetryLabel}" Command="{Binding RetryCommand}" HorizontalAlignment="Left" />
+		<!-- Loading -->
+		<StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+		            HorizontalAlignment="Center" VerticalAlignment="Center"
+		            Orientation="Horizontal" Spacing="12">
+			<ProgressRing IsActive="{Binding IsLoading}" Width="24" Height="24" />
+			<TextBlock Text="{Binding LoadingMessage}" VerticalAlignment="Center" Opacity="0.7" />
 		</StackPanel>
 
-		<ListView ItemsSource="{Binding Films}"
-		          Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibilityConverter}}"
-		          SelectionMode="None">
-			<ListView.ItemTemplate>
-				<DataTemplate>
-					<StackPanel Orientation="Horizontal" Margin="0,4">
-						<TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,12,0" />
-						<TextBlock Text="{Binding EpisodeLabel}" Opacity="0.7" />
-					</StackPanel>
-				</DataTemplate>
-			</ListView.ItemTemplate>
-		</ListView>
+		<!-- Empty -->
+		<TextBlock Text="{Binding EmptyMessage}"
+		           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
+		           HorizontalAlignment="Center" VerticalAlignment="Center"
+		           TextWrapping="Wrap" Opacity="0.7" />
+
+		<!-- Error -->
+		<StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+		            HorizontalAlignment="Center" VerticalAlignment="Center"
+		            MaxWidth="420" Spacing="12">
+			<TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" HorizontalAlignment="Center"
+			           TextAlignment="Center" />
+			<Button Content="{Binding RetryLabel}" Command="{Binding RetryCommand}"
+			        HorizontalAlignment="Center" />
+		</StackPanel>
+
+		<!-- Loaded -->
+		<ScrollViewer Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibilityConverter}}"
+		              VerticalScrollBarVisibility="Auto" Padding="0,8,0,24">
+			<ItemsControl ItemsSource="{Binding Films}" MaxWidth="720" HorizontalAlignment="Stretch" Margin="24,0">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<!-- A Button gives keyboard focus, Enter/Space activation and hover/press
+						     visuals for free, which a bare ListView item does not. -->
+						<Button Command="{Binding DataContext.SelectFilmCommand, ElementName=RootGrid}"
+						        CommandParameter="{Binding}"
+						        HorizontalAlignment="Stretch"
+						        HorizontalContentAlignment="Stretch"
+						        Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+						        BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+						        BorderThickness="1"
+						        Padding="16,14"
+						        Margin="0,0,0,8">
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="Auto" />
+									<ColumnDefinition Width="*" />
+									<ColumnDefinition Width="Auto" />
+								</Grid.ColumnDefinitions>
+
+								<!-- Episode badge -->
+								<Border Grid.Column="0"
+								        Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+								        CornerRadius="4" Padding="10,4" MinWidth="64"
+								        VerticalAlignment="Center" Margin="0,0,16,0">
+									<TextBlock Text="{Binding EpisodeLabel}"
+									           Foreground="White" FontSize="12" FontWeight="SemiBold"
+									           HorizontalAlignment="Center" />
+								</Border>
+
+								<TextBlock Grid.Column="1" Text="{Binding Title}"
+								           FontSize="16" FontWeight="SemiBold"
+								           VerticalAlignment="Center" TextWrapping="Wrap" />
+
+								<FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="12"
+								          Opacity="0.5" VerticalAlignment="Center" Margin="12,0,0,0" />
+							</Grid>
+						</Button>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
 	</Grid>
 </Page>
