@@ -215,6 +215,52 @@ Six existing projects, no new ones:
 
 ---
 
+## Phase 8: Increment 2 — All Five Related Categories (US3 extended)
+
+**Goal**: The detail page presents all five related categories the source publishes — Characters, Planets, Starships, Vehicles, Species — as independently expandable sections, each with its entry count, its own state and its own retry.
+
+**Independent Test**: Open any film — five sections are listed with counts from the film's own response; Characters is expanded and populated; expanding any other loads and lists its names; a failure or emptiness in one section leaves the other four and the film's own details untouched.
+
+> **Why this is a new phase rather than an edit to Phases 4–5.** Those phases shipped, were validated against a running app, and produced the test-first commit sequence that is this feature's XIV evidence. Rewriting them to pretend five categories were always in scope would destroy that evidence to make the history look tidier. This phase extends the delivered feature and says so.
+
+> **Scope note.** The brief asks for "a list of **one** of the following categories". Five is deliberately more than asked. It is justified by the fact that all five share one record shape (R10), so satisfying the requirement five times over costs one enum and one section class rather than five copies of the Characters code — see [research.md](./research.md) R10 and the spec's increment-2 clarifications.
+
+### Cycle 15 — Five reference arrays and their mapping
+
+> **Rename first, under a green suite.** T078 is a pure refactor with no behaviour change: it renames types whose narrow names were only ever accurate while Characters was the sole category. No test should change meaning — a test that does is a bug in the rename, not a scope change. Run the suite before and after and confirm the same count passes.
+
+- [X] T078 Rename `PersonDto`→`NamedResourceDto`, `CharacterLoadResult`→`RelatedResourceLoadResult` (with `Characters`→`Resources`), `IStarWarsService.GetCharactersAsync`→`GetRelatedResourcesAsync` and `CharacterListItem`→`RelatedResourceListItem`, updating `DrawboardCodingExercise.Services/StarWars/`, `DrawboardCodingExercise.ViewModel/` and every existing test, renaming `StarWarsServiceCharactersTests.cs`→`StarWarsServiceResourcesTests.cs`; confirm the suite passes with the **same test count** as before
+- [X] T079 [P] Create the `RelatedCategory` enum (`Characters`, `Planets`, `Starships`, `Vehicles`, `Species` — declaration order is display order) in `DrawboardCodingExercise.ViewModel/Models/RelatedCategory.cs`
+- [X] T080 [P] Add a captured `films/1` payload containing all five reference arrays, plus `planets/1`, `starships/2`, `vehicles/4` and `species/1` records, to `DrawboardCodingExercise.Services.UnitTests/TestData/SwapiPayloads.cs`
+- [X] T081 **RED** Write failing test T36 in `DrawboardCodingExercise.Services.UnitTests/Mapping/FilmMapperTests.cs` — mapping a real `films/1` payload yields a `RelatedUrls` dictionary containing **all five** `RelatedCategory` keys with the correct urls, and a payload whose arrays are absent or null still yields all five keys mapped to **empty** lists (M5, M7, V15)
+- [X] T082 **GREEN** Add `Planets`, `Starships`, `Vehicles` and `Species` `[JsonProperty]` arrays to `DrawboardCodingExercise.Services/StarWars/Dtos/FilmDto.cs`, replace `FilmDetailsDisplay.CharacterUrls` with `RelatedUrls` in `DrawboardCodingExercise.ViewModel/Models/FilmDetailsDisplay.cs`, and implement M7 in `DrawboardCodingExercise.ViewModel/Models/FilmMapper.cs` so every enum value is always a key
+
+### Cycle 16 — Five sections on the detail page
+
+- [X] T083 **RED** Stub `RelatedCategorySection` (`Category`, `Title`, `Count`, `Items`, `State`, `IsExpanded`, `HasPartialFailure`, `HasBeenLoaded`, toggle/retry commands) in `DrawboardCodingExercise.ViewModel/RelatedCategorySection.cs`, then write failing tests T37 and T38 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmDetailsViewModelTests.cs` — a loaded film exposes **exactly five** sections in declaration order with their localized titles and counts taken from the film's own response, and on arrival **only Characters** calls the service while the other four remain collapsed with **zero** calls
+- [X] T084 **GREEN** Replace the single character state on `DrawboardCodingExercise.ViewModel/FilmDetailsViewModel.cs` with a `Categories` collection of five `RelatedCategorySection` instances built once the film resolves, expanding and loading Characters only
+
+### Cycle 17 — Load on first expansion, and section-local retry
+
+- [X] T085 **RED** Write failing tests T39 and T40 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/RelatedCategorySectionTests.cs` — expanding a collapsed section triggers **exactly one** retrieval, collapsing and re-expanding triggers **none**, a section with zero urls goes straight to `Empty` **without calling the service**, and a section left in `Error` is **not** re-requested by re-expansion but **is** by its own retry command
+- [X] T086 **GREEN** Implement the load-once guard, the expand-triggered load and the section-local retry in `DrawboardCodingExercise.ViewModel/RelatedCategorySection.cs`, keeping `Empty`, partial-failure and `Error` handling per section
+
+### Cycle 18 — Per-section progress and isolation
+
+- [X] T087 **RED** Write failing tests T41 and T42 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmDetailsViewModelTests.cs` — each section's `NotifyBusyEvent`/`NotifyDoneEvent` messages **name its own category** so no two sections share a progress string, every pair is byte-identical and cleared, and a failure in one section leaves the film `Loaded` and the other four sections in their own untouched states
+- [X] T088 **GREEN** Give each section a category-named progress message in `DrawboardCodingExercise.ViewModel/FilmDetailsViewModel.cs` / `RelatedCategorySection.cs`, routed through `RunBusyAsync` so done still posts in `finally`
+
+### Presentation (XV-exempt — manually validated per [quickstart.md](./quickstart.md) §5)
+
+- [X] T089 Replace the character-specific strings with the five localized category names and the generic section strings (heading count format, empty, error, partial, and the category-named progress format) in `DrawboardCodingExercise/Strings/en/Resources.resw`
+- [X] T090 Replace the single character section in `DrawboardCodingExercise/View/FilmDetails.xaml` with one `ItemsControl` over `Categories`, its `DataTemplate` being a `ToggleButton` header (count + chevron, `IsChecked` two-way bound to `IsExpanded`) over a body whose `Visibility` binds through the existing `BoolToVisibilityConverter` — **there is no `Expander` in UWP without WinUI 2, which this project does not reference**
+- [ ] T091 Build for x64 with MSBuild, run `dotnet test`, then deploy and walk the increment-2 rows of the [quickstart.md](./quickstart.md) §5 checklist — five sections with correct counts, only Characters loading on arrival, re-expansion issuing no request, and concurrent sections each clearing their own progress
+- [ ] T092 Update `SOLUTION.md` sections 1–4 and 7–10 for the five-category scope: the verified `name` shape across all five categories, the one-type/one-method decision and its rejected alternatives, lazy loading and the 38-request measurement behind it, the per-section concurrency limitation, per-section progress isolation, and the removal of "the other four categories" from the extension ideas now that they are built
+
+**Checkpoint**: The detail page presents all five categories, each loading and failing independently.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -226,6 +272,7 @@ Six existing projects, no new ones:
 - **User Story 3 (Phase 5)**: Depends on Phase 4 — the character section lives on the detail page.
 - **User Story 4 (Phase 6)**: Depends on Phases 3–5 for the surfaces it hardens; its mechanism came from Phase 2.
 - **Polish (Phase 7)**: Depends on all stories.
+- **Increment 2 (Phase 8)**: Depends on Phases 4–5 — it generalises the detail page's single character section. Within it, T078 (the rename) gates everything, and cycles 15 → 16 → 17 → 18 are strictly ordered: the mapping must supply five url lists before five sections can be built from them, sections must exist before their expansion behaviour can be driven, and their progress messages can only be asserted once they load.
 
 ### Within Each Cycle
 
@@ -241,7 +288,8 @@ The template's ideal is fully independent stories. These are **not** independent
 - **Phase 2, cycle 2**: T011–T015 are five separate model files, all parallel.
 - **Phase 6**: T061 and T062 touch different XAML files.
 - **Phase 7**: T063 and T064 touch different projects.
-- **`Resources.resw` tasks (T037, T048, T054, T060) are deliberately not marked `[P]`** — they all edit the same file and would conflict.
+- **Phase 8**: T079 and T080 touch different files, and both are independent of the T078 rename. Everything after them is strictly sequential.
+- **`Resources.resw` tasks (T037, T048, T054, T060, T089) are deliberately not marked `[P]`** — they all edit the same file and would conflict.
 - **A cycle's RED and GREEN are never parallel.** That is the whole point.
 
 ---
@@ -293,9 +341,9 @@ At that point the starter samples still exist but are unreachable from the start
 
 ## Notes
 
-- **77 tasks**: 8 setup, 24 foundational, 9 (US1), 10 (US2), 4 (US3), 7 (US4), 15 polish.
+- **92 tasks**: 8 setup, 24 foundational, 9 (US1), 10 (US2), 4 (US3), 7 (US4), 15 polish, **15 increment 2**. T001–T077 are complete; T078–T092 are the five-category increment.
 - `README.md` is never edited. All documentation is `SOLUTION.md`, written across T070–T075 against the ten-section contract in [plan.md](./plan.md).
 - Every behaviour on Constitution XV's mandatory list is driven by a RED task before its GREEN.
 - Commit after each RED and each GREEN — the pairing *is* the XIV evidence, and it cannot be reconstructed afterwards.
-- Two numbering schemes are in play: **T1–T35** are the tests in [quickstart.md](./quickstart.md) §4; **T001–T074** are tasks here. A task references the tests it drives.
+- Two numbering schemes are in play: **T1–T42** are the tests in [quickstart.md](./quickstart.md) §4; **T001–T092** are tasks here. A task references the tests it drives.
 - Anything implemented without a test must appear on the documented-exemptions table in [plan.md](./plan.md).

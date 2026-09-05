@@ -99,8 +99,15 @@ So this table is read twice: top-to-bottom by cycle while building, and as the c
 | T9 | 12 | Whitespace parameter ⇒ `InvalidSelection`, service never called | `FilmDetailsViewModel` | FR-013 |
 | T6 | 13 | Detail loads from an id and exposes all six required fields | `FilmDetailsViewModel` | FR-007 |
 | T10 | 13 | 404 ⇒ `InvalidSelection` and **no retry prompt shown** | `FilmDetailsViewModel` | FR-013, V4 |
-| T22 | 14 | Film with no characters ⇒ `Empty` character state | `FilmDetailsViewModel` | FR-012 |
-| T33 | 14 | **Character load failing leaves the film's own details `Loaded` and readable** | `FilmDetailsViewModel` | FR-011, FR-012 |
+| T22 | 14 | Category with no references ⇒ `Empty` section state | `FilmDetailsViewModel` | FR-012 |
+| T33 | 14 | **A section load failing leaves the film's own details `Loaded` and readable** | `FilmDetailsViewModel` | FR-011, FR-012 |
+| T36 | 15 | Mapping populates **all five** reference-url lists, with every `RelatedCategory` key present even when an array is null | `FilmMapper` | FR-027, M5, M7, V15 |
+| T37 | 16 | A loaded film exposes **exactly five** sections, in declaration order, each with its localized title and the count from the film's own response | `FilmDetailsViewModel` | FR-027 |
+| T38 | 16 | On arrival **only Characters requests**; the other four are collapsed with **zero** service calls | `FilmDetailsViewModel` | FR-028 |
+| T39 | 17 | First expansion loads exactly once; collapse + re-expand issues **no** further request | `RelatedCategorySection` | FR-028, V13 |
+| T40 | 17 | A section that failed does **not** silently re-request on re-expansion — only its own Retry does | `RelatedCategorySection` | FR-028 |
+| T41 | 18 | Each section's busy/done messages **name its own category**, so two concurrent sections never share a progress string | `FilmDetailsViewModel` | FR-029, V14, AC-009 |
+| T42 | 18 | One section failing leaves the **other four** untouched in their own states | `FilmDetailsViewModel` | FR-012 |
 
 > **T29 earns its place.** `films/1` is Episode 4 — id and episode number are unrelated. A mapper that derives one from the other opens the wrong film while looking entirely plausible on screen. See [contracts/swapi-endpoints.md](./contracts/swapi-endpoints.md) § *Identifier semantics*.
 
@@ -109,6 +116,8 @@ So this table is read twice: top-to-bottom by cycle while building, and as the c
 > **T32, T33 and T34 were added by the TDD re-plan.** XV names "malformed, null, partial, or empty API responses" as mandatory; the suite covered null, partial and empty but **not malformed** — T32 closes that. T33 covers the one FR that had no test at all: FR-011's requirement that the character section fails *independently*, leaving the film's own fields on screen. T34 makes cycle 5 concrete — the 404-to-null conversion is service behaviour and needs its own red, rather than being tested only through the ViewModel.
 
 > **T13, T14 and T16 are asserted twice, deliberately.** Once against `PageViewModelBase` via a probe ViewModel (cycle 7), and again against each real ViewModel (cycles 9, 13, 14). The first proves the mechanism pairs events correctly; the second proves each ViewModel actually *uses* it. Without the second, a ViewModel that forgets to call `RunBusyAsync` passes the whole suite while leaving the shell's progress ring spinning — which is exactly the failure the base class exists to prevent.
+
+> **T36–T42 came with the five-category increment.** T38 and T39 are the two that matter most: without them, "loads on first expansion" degrades silently into "loads everything on arrival" or "re-requests on every toggle", and both still *look* correct on screen — the user sees the right names either way, and only the request count differs. A behaviour whose failure mode is invisible is exactly the kind that needs a test rather than a manual check. T41 guards the crash described under V14 in [data-model.md](./data-model.md): five sections sharing one progress string would have the shell call `RemoveAt(-1)` on the UI thread.
 
 > **T35 asserts the log level, not the message text.** FR-020 requires diagnostics, and `Serilog.ILogger` substitutes cleanly, so "not practical to test" would be untrue. But asserting message templates couples tests to prose that will be reworded. The test asserts that a failure produces an `Error`-level entry and nothing more.
 
@@ -129,8 +138,14 @@ Automated tests cannot cover the UWP surface. Walk this before calling the featu
 - [ ] Detail page shows title, episode number, release date, director, producer, opening crawl.
 - [ ] Release date is human-readable, not `1977-05-25`.
 - [ ] Opening crawl is fully readable and scrolls; it does not push other fields off-screen.
-- [ ] Character section shows its own progress, then a populated list of names.
-- [ ] Film details stay readable the whole time the characters are loading.
+- [ ] **Five** category sections are listed — Characters, Planets, Starships, Vehicles, Species — each with its entry count in the header.
+- [ ] The counts match the film: *A New Hope* shows 18 / 3 / 8 / 4 / 5.
+- [ ] Characters is already expanded on arrival; it shows its own progress, then a populated list of names.
+- [ ] The other four are collapsed on arrival and show **no** progress — nothing loads until you open one.
+- [ ] Expanding Planets loads and lists planet names; the same for Starships, Vehicles and Species.
+- [ ] Collapse and re-expand a loaded section: the names reappear **instantly**, with no progress indication (proof it did not re-request).
+- [ ] Expand three sections in quick succession: each reports its own progress, and each clears its own — no crash, and no section left spinning after the others finish.
+- [ ] Film details stay readable the whole time any section is loading.
 - [ ] Back returns to the list; the list is populated and interactive again.
 - [ ] Selecting a different film shows the new film — **no data from the previous film remains**.
 - [ ] Repeat the list → detail → back cycle three times: progress still clears every time.
@@ -145,7 +160,9 @@ Point `ServerAddress` at an unreachable host, or disconnect the network.
 - [ ] The on-page retry works.
 - [ ] Nothing is stuck spinning after any of the above.
 - [ ] Detail page failure behaves the same way.
-- [ ] Character-section failure leaves the film's own details on screen.
+- [ ] A section's failure leaves the film's own details on screen **and the other four sections usable**.
+- [ ] A failed section's own retry reloads **only that section** — the film does not re-request and the other sections are undisturbed.
+- [ ] Re-expanding a failed section does **not** silently retry it; only its retry button does.
 
 ### Edge cases
 
@@ -186,11 +203,11 @@ All candidate-authored documentation lives here. The full contract is in [plan.m
 - [ ] 1. Chosen API — Star Wars Movies API, why it was chosen, verified response shapes, the id-vs-episode trap
 - [ ] 2. Architecture decisions — starter reuse, `IStarWarsService` above `IAPIClient`, DTOs vs display models, `PageViewModelBase`, rejected alternatives
 - [ ] 3. Assumptions — including the five clarification answers and what each reversed
-- [ ] 4. Limitations — the budget stops the caller but does not abort the request; no caching; Characters only; English only; registration has no automated safety net
+- [ ] 4. Limitations — the budget stops the caller but does not abort the request; no caching; names only, with no drill-down into a related record; the concurrency cap is per section, so five expanded sections can reach 30 in-flight requests; English only; registration has no automated safety net
 - [ ] 5. How to build and run — VS 2026, UWP workload, Windows 11 SDK, x64/ARM64 only, MSBuild for the UWP project
 - [ ] 6. How to run tests — `dotnet test`, deterministic and offline, injected budget
 - [ ] 7. **Error handling approach** — the failure taxonomy and why a 404 is an invalid selection rather than a retryable error
-- [ ] 8. **Progress / loading behaviour** — busy/done pairing, why a mismatch would throw, independent film and character progress, clearing on every path
+- [ ] 8. **Progress / loading behaviour** — busy/done pairing, why a mismatch would throw, per-category progress messages and why five sections cannot share one, lazy loading on first expansion, clearing on every path
 - [ ] 9. Future extension ideas — led by `CancellationToken` on `IAPIClient`
 - [ ] 10. AI-assisted development — what AI produced, challenges, manual corrections, and validation evidence
 

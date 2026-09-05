@@ -190,6 +190,30 @@ The stub is not an end-run around test-first. It contains no behaviour, so nothi
 
 ---
 
+## R10 — One record shape and one retrieval path for all five related categories
+
+**Decision**: Model the five categories as a display-layer enum over a single `NamedResourceDto` and a single `GetRelatedResourcesAsync`, and load each section on first expansion rather than on page open.
+
+**Rationale**: three separate findings, each verified rather than assumed.
+
+*1. All five categories have the same displayable shape.* `people/1`, `planets/1`, `starships/2`, `vehicles/4` and `species/1` were each fetched live on 2026-09-05 and all five returned a `name` field ("Luke Skywalker", "Tatooine", "CR90 corvette", "Sand Crawler", "Human"). Since this feature displays nothing but the name, the categories are indistinguishable below the section header. Five DTOs and five service methods would differ only in their type names — the definition of the duplication Principle II forbids. The category distinction is real, but it is a *display* fact, so it lives in a `RelatedCategory` enum in the ViewModel layer and never crosses into `IStarWarsService`.
+
+*2. Eager loading is a real cost, not a hypothetical one.* `films/1` references 18 characters, 3 planets, 8 starships, 4 vehicles and 5 species — **38 records** for one film. Loading all five sections on arrival would issue 38 requests against a free community-run mirror every time a user opens any film, the overwhelming majority for sections they never scroll to. Loading on first expansion keeps the page's opening cost identical to the shipped Characters-only behaviour and makes each further category one interaction away.
+
+*3. A collapsed section must not re-request.* Once expanded and loaded, collapse/re-expand shows the retained items. A *failed* section is retried only through its own retry button, never by being re-expanded — otherwise a user idly toggling a broken section would repeatedly hammer a failing endpoint, and the retry/cancel prompt would reappear on a gesture the user did not intend as a retry.
+
+**Alternatives considered**:
+
+- *A DTO per category (`PlanetDto`, `StarshipDto`, …)* — rejected. Four extra types with identical members, four extra service methods, and four more places to update when the record shape changes. It would only earn its keep if a category displayed a field the others lack, which none currently do. The reversal is cheap if that changes: one type splits, and the retrieval path is untouched because it never referenced the type's identity, only its `name`.
+- *Passing `RelatedCategory` into the service* — rejected. The service would gain a `switch` mapping enum to path prefix, but it already receives absolute URLs from the film's own response, so it does not need to know the path — the film already told it. The enum would be a parameter the method never reads.
+- *Loading all five sections eagerly on page open* — rejected on the 38-request measurement above. It would also make the film's own details compete for the connection with five sections the user has not asked for.
+- *Loading eagerly but rendering progressively* — rejected. Same request cost, and it contradicts the clarified reveal-when-complete behaviour (FR-010) that the shipped Characters section already follows.
+- *A single shared concurrency semaphore across all five sections* — rejected. It caps the in-flight burst at 6 globally, but serialises sections behind each other: expand Planets while Characters is loading and Planets appears frozen until Characters finishes. The per-call cap keeps each section responsive; the burst it permits (30, only if the user deliberately expands all five at once) is the better trade.
+
+**Consequence**: the five-category scope costs one enum, one section class and one collection. Notably it is *less* code than the Characters-only version would have been if the other four had been added later by copying it — which is the honest reason to generalise now rather than defer.
+
+---
+
 ## Cross-cutting note: what the ViewModels must never do
 
 Not a decision so much as a constraint discovered while reading the starter, recorded here because it shapes every load path:

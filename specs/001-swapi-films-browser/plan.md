@@ -6,15 +6,16 @@
 
 ## Summary
 
-Add a two-page Star Wars browsing flow to the existing Drawboard UWP starter: a **Films** page listing all six films by title and episode number (sorted ascending by episode), and a **FilmDetails** page reached by selecting a film, showing its title, episode number, release date, director, producer, opening crawl and its character list.
+Add a two-page Star Wars browsing flow to the existing Drawboard UWP starter: a **Films** page listing all six films by title and episode number (sorted ascending by episode), and a **FilmDetails** page reached by selecting a film, showing its title, episode number, release date, director, producer, opening crawl and all five of its related categories — Characters, Planets, Starships, Vehicles and Species — as independently expandable sections.
 
 The technical approach is deliberately additive. Every piece of starter framework — `Shell`, `NavigationService`, `EventAggregator`, `UserInteractionService`, `LocalizationService`, `APIClient`, the Autofac modules — is reused **unchanged**. New code lands as: two DTOs and one service in `DrawboardCodingExercise.Services`, two ViewModels plus display models and a shared base class in `DrawboardCodingExercise.ViewModel`, two XAML pages in the UWP app, and a unit-test suite that never touches the network. The starter's `Welcome` and `PageA` samples are retired.
 
-Three decisions carry most of the design weight, and all three were verified against the live API and the real Newtonsoft behaviour rather than assumed:
+Four decisions carry most of the design weight, and each was verified against the live API and the real Newtonsoft behaviour rather than assumed:
 
 1. **DTOs carry explicit `[JsonProperty]` attributes.** This makes SWAPI's `snake_case` fields bind correctly *without* touching the shared `JsonSerializerSettings` the starter registers — verified empirically (see [research.md](./research.md) R1).
 2. **The 15-second request budget is enforced inside `StarWarsService`**, not by modifying `IAPIClient` or the shared static `HttpClient`, keeping the starter framework untouched (R3).
 3. **A small `PageViewModelBase`** owns the busy/done event pairing and the retry/cancel loop, because `ShellViewModel` *throws* if a done-message doesn't exactly match a busy-message (R4). Centralising it turns a latent crash into a structural guarantee.
+4. **All five related categories are served by one record type and one retrieval method**, because all five publish the same `name`/`url` shape — verified live for `people`, `planets`, `starships`, `vehicles` and `species` (R10). The five-way distinction lives in `RelatedCategory`, a display-layer enum that never reaches the service.
 
 **Build order is test-first.** Constitution XV makes red-green-refactor mandatory for every behaviour this feature adds — service response handling, mapping, sorting, ViewModel states, navigation, retry/cancel, and busy/done cleanup. That does not change the design above; it changes the order in which it is written and adds an evidence obligation to the definition of done. The sequencing is set out in [§ Implementation Sequence](#implementation-sequence-test-first), and R9 records how "red" is made meaningful in a statically-typed language where a missing type fails at compile time rather than at assertion time.
 
@@ -32,11 +33,11 @@ Three decisions carry most of the design weight, and all three were verified aga
 
 **Project Type**: Desktop application (UWP + MVVM), 6-project solution.
 
-**Performance Goals**: Film list visible within 5s (SC-001); any failure surfaced within 20s (SC-005); character retrieval capped at 6 concurrent requests (FR-010).
+**Performance Goals**: Film list visible within 5s (SC-001); any failure surfaced within 20s (SC-005); related-resource retrieval capped at 6 concurrent requests per section (FR-010).
 
 **Constraints**: Shared projects must stay `netstandard2.0`-compatible. All HTTP through `IAPIClient`. No SWAPI-wrapping NuGet package. The UWP project is **old-style MSBuild** — every new `.cs` and `.xaml` file must be added to `DrawboardCodingExercise.csproj` by hand as `<Compile>` / `<Page>` items or it will silently not compile into the app.
 
-**Scale/Scope**: 6 films, ≤34 characters per film, 2 new pages, ~14 new source files, ~10 modified files, 35 required tests across 15 test-first cycles.
+**Scale/Scope**: 6 films, five related categories per film totalling ≤38 references (18/3/8/4/5 for *A New Hope*), 2 new pages, ~16 new source files, ~12 modified files, 42 required tests across 19 test-first cycles.
 
 ## Constitution Check
 
@@ -45,7 +46,7 @@ Three decisions carry most of the design weight, and all three were verified aga
 | # | Principle | Gate | How this plan satisfies it |
 |---|-----------|------|----------------------------|
 | I | Extend the Provided Application | **PASS** | Zero framework files modified. New code slots into the existing four-project layout. `Welcome`/`PageA` retired per the clarified spec (AC-001) — samples, not architecture. |
-| II | SOLID and Proportionate Design | **PASS** | One service, one VM base class, one mapper. No repository, no CQRS, no mediator, no new projects. Each addition is justified in [research.md](./research.md). |
+| II | SOLID and Proportionate Design | **PASS** | One service, one VM base class, one mapper, one section type. No repository, no CQRS, no mediator, no new projects. Five categories add **one enum and one collection**, not five DTOs and five service methods — the widened scope costs less code than the narrow version would have if written five times (R10). Each addition is justified in [research.md](./research.md). |
 | III | MVVM and UWP Conventions | **PASS** | Both VMs derive from `ObservableObject` via `PageViewModelBase`, are `partial`, use `[ObservableProperty]`/`[RelayCommand]`, load via `OnNavigatedToAsync`, and expose explicit `PageLoadState`. Code-behind is `InitializeComponent()` only. |
 | IV | Dependency Injection | **PASS** | `StarWarsService` registered in `WebServicesModule`; both view/VM pairs in `NavigationModule` via the existing `RegisterView<TView,TViewModel>`. Constructor injection throughout; no `new` on dependencies. |
 | V | Navigation | **PASS** | `PageKey.Films` and `PageKey.FilmDetails` added. Detail page receives an opaque film id string. Invalid/unknown ids produce a visible invalid-selection state. Back navigation is untouched shell behaviour. |
@@ -66,6 +67,7 @@ Two additions warrant a proportionality note, since Principle II forbids gratuit
 
 - **`PageViewModelBase`** — justified defensively, not stylistically. `ShellViewModel.OnNotifyDone` calls `_thingsInProgress.RemoveAt(IndexOf(...))`; a mismatched or unpaired done-message throws `ArgumentOutOfRangeException` on the UI thread. Two ViewModels running three separate operations each would duplicate that hazard six times. One base class makes the pairing structural. See R4.
 - **`FilmMapper`** — justified by FR-024, which requires DTO→display-model mapping to be tested independently of any ViewModel. A static mapper is the smallest thing that makes that test possible.
+- **`RelatedCategorySection`** — justified by arithmetic, not taste. The Characters section alone needs a collection, a state enum, a partial-failure flag, four derived visibility booleans, a load-once guard, a retry command and a localized title. Inlining that five times over is ~50 members on `FilmDetailsViewModel` and five copies of one load method; extracting it is one class of about 60 lines and one `ObservableCollection` of five instances. It also collapses the XAML from five hand-maintained blocks to one `DataTemplate`. The section owns state and behaviour, so it is an observable object rather than one of the immutable display models — see [data-model.md](./data-model.md) §2.
 
 ## Project Structure
 
@@ -101,8 +103,8 @@ DrawboardCodingExercise.Services/           # netstandard2.0 — API + infrastru
     ├── StarWarsService.cs                  + retrieval, URL normalisation, budget, concurrency
     ├── SwapiResourcePath.cs                + absolute-URL → relative-path + id helpers
     └── Dtos/
-        ├── FilmDto.cs                      + [JsonProperty]-annotated film record
-        └── PersonDto.cs                    + [JsonProperty]-annotated character record
+        ├── FilmDto.cs                      + [JsonProperty]-annotated film record, all 5 reference arrays
+        └── NamedResourceDto.cs             + [JsonProperty]-annotated name/url record — serves all 5 categories
 
 DrawboardCodingExercise.ViewModel/          # netstandard2.0 — UI state
 ├── DrawboardCodingExercise.ViewModel.csproj ~ add ProjectReference → Services
@@ -111,10 +113,12 @@ DrawboardCodingExercise.ViewModel/          # netstandard2.0 — UI state
 ├── FilmsViewModel.cs                       + list page VM
 ├── FilmDetailsViewModel.cs                 + detail page VM
 ├── ShellViewModel.cs                       ~ startup navigation Welcome → Films
+├── RelatedCategorySection.cs               + observable per-category section: state, lazy load, retry
 ├── Models/
 │   ├── FilmListItem.cs                     + display model (title, episode, opaque id)
-│   ├── FilmDetailsDisplay.cs               + display model (formatted date, placeholders)
-│   ├── CharacterListItem.cs                + display model (name)
+│   ├── FilmDetailsDisplay.cs               + display model (formatted date, placeholders, 5 url lists)
+│   ├── RelatedCategory.cs                  + enum: Characters|Planets|Starships|Vehicles|Species
+│   ├── RelatedResourceListItem.cs          + display model (name) — one row in any section
 │   └── FilmMapper.cs                       + DTO → display mapping (independently tested)
 ├── WelcomeViewModel.cs                     - retired
 └── PageAViewModel.cs                       - retired
@@ -137,13 +141,14 @@ DrawboardCodingExercise.Services.UnitTests/ # net8.0 — deterministic, offline
 │   ├── StarWarsServiceFilmsTests.cs        + T24, T25, T32, T35 — list retrieval + failure modes
 │   ├── StarWarsServiceBudgetTests.cs       + T23 — 15s budget (injected, millisecond-scale)
 │   ├── StarWarsServiceFilmTests.cs         + T34 — single film, 404 ⇒ null
-│   └── StarWarsServiceCharactersTests.cs   + T18–T21 — order, concurrency cap, partial/total failure
-├── Mapping/FilmMapperTests.cs              + T26–T29 — mapping against a captured real payload
+│   └── StarWarsServiceResourcesTests.cs    + T18–T21 — order, concurrency cap, partial/total failure
+├── Mapping/FilmMapperTests.cs              + T26–T29, T36 — mapping against a captured real payload
 ├── ViewModels/
 │   ├── PageViewModelBaseProgressTests.cs   + T13–T16 via probe VM — busy/done pairing
 │   ├── PageViewModelBaseRetryTests.cs      + T11, T12 via probe VM — retry/cancel loop
 │   ├── FilmsViewModelTests.cs              + T1–T5, T13/T16 (real VM), T17 — load, sort, select, progress
-│   └── FilmDetailsViewModelTests.cs        + T6–T10, T13/T16 (real VM), T17, T22, T33 — detail, params, characters
+│   ├── FilmDetailsViewModelTests.cs        + T6–T10, T13/T16 (real VM), T17, T22, T33, T37, T38, T41, T42
+│   └── RelatedCategorySectionTests.cs      + T39, T40 — load-once, expand/collapse, section-local retry
 ├── TestData/SwapiPayloads.cs               + captured snake_case API responses as string constants
 ├── TestDoubles/Builders.cs                 + DTO and display-model builders
 └── XUnitTests.cs                           (kept — starter's framework smoke test)
@@ -195,9 +200,26 @@ Dependencies flow downward — each layer's tests are written against types the 
 | 11 | Selection navigation | `FilmsViewModel` select command | T4, T5 |
 | 12 | Detail parameter validation | `FilmDetailsViewModel` guards | T7, T8, T9 |
 | 13 | Detail load | `FilmDetailsViewModel` film state | T6, T10, T17, **T13/T16 (real VM)** |
-| 14 | Detail character states | `FilmDetailsViewModel` character state | T22, **T33**, **T13/T16 (character load)** |
+| 14 | Detail category states | `FilmDetailsViewModel` section state | T22, **T33**, **T13/T16 (section load)** |
 
 Cycles 1–8 need no UWP types at all and run entirely in the net8.0 test project. Only after cycle 14 is any XAML written.
+
+### Increment 2 — all five related categories
+
+Cycles 15–18 extend the delivered feature from one category to five. They are sequenced after 14 rather than folded into it because cycles 1–14 shipped and were validated against a running app; rewriting them retroactively would destroy the TDD evidence they produced.
+
+Cycles 15 and 16 begin with a **pure rename** — `PersonDto` → `NamedResourceDto`, `CharacterLoadResult` → `RelatedResourceLoadResult`, `GetCharactersAsync` → `GetRelatedResourcesAsync`, `CharacterListItem` → `RelatedResourceListItem`. That is a refactor step under a green suite, not a cycle: no test changes meaning, and any that does is a bug in the rename. The generalisation those names describe was already true — the method only ever passed URLs and read `name`.
+
+| # | Cycle | Drives | Tests |
+|---|---|---|---|
+| 15 | Five reference arrays + mapping | `FilmDto.Planets/.Starships/.Vehicles/.Species`, `RelatedCategory`, `FilmDetailsDisplay.RelatedUrls` | **T36** |
+| 16 | Five sections on the detail page | `FilmDetailsViewModel.Categories` | **T37**, **T38** |
+| 17 | Lazy load on first expansion | `RelatedCategorySection` load-once + retry | **T39**, **T40** |
+| 18 | Per-section progress and isolation | `FilmDetailsViewModel` section messages | **T41**, **T42** |
+
+Then, XV-exempt and manually validated: the five localized category names and the generic section strings in `Resources.resw`, and the expander template in `FilmDetails.xaml`.
+
+> **UWP has no `Expander`.** `Expander` ships in WinUI 2 (`Microsoft.UI.Xaml`), and this project has no WinUI package — the same discovery that ruled out `AccentButtonStyle` earlier. The sections are therefore built from a `ToggleButton` header two-way bound to `IsExpanded`, with the body's `Visibility` bound through the starter's existing `BoolToVisibilityConverter`. No new package, no new converter. This is worth stating explicitly because "just use an Expander" is the obvious first move and it does not compile here.
 
 ### Coverage audit against XV's mandatory list
 
@@ -206,14 +228,14 @@ XV names nine behaviour categories as mandatory. Each maps to at least one cycle
 | XV mandatory behaviour | Cycles | Tests |
 |---|---|---|
 | API service response handling | 3, 5, 6 | T24, T25, T32, T34, T18–T21 |
-| DTO-to-display mapping | 2 | T26–T29 |
+| DTO-to-display mapping | 2, 15 | T26–T29, **T36** |
 | Film list sorting | 10 | T2 |
-| ViewModel loading / loaded / empty / error states | 9, 13, 14 | T1, T3, T6, T22, T33 |
+| ViewModel loading / loaded / empty / error states | 9, 13, 14, 16, 17 | T1, T3, T6, T22, T33, T37, T39 |
 | Film selection navigation | 11 | T4, T5 |
 | Detail navigation parameter handling | 12, 13 | T7, T8, T9, T10 |
-| Retry/cancel API failure behaviour | 8 | T11, T12 |
-| `NotifyBusyEvent` / `NotifyDoneEvent` cleanup | 7, 9, 13, 14 | T13–T16 at the base class, then T13/T16 again against each real ViewModel and the character load |
-| Malformed, null, partial, empty responses | 3, 6 | **T32** (malformed), T25 (null/empty), T20 (partial), T3 (empty) |
+| Retry/cancel API failure behaviour | 8, 17 | T11, T12, T40 |
+| `NotifyBusyEvent` / `NotifyDoneEvent` cleanup | 7, 9, 13, 14, 18 | T13–T16 at the base class, then T13/T16 again against each real ViewModel and a section load, then **T41** for per-section message distinctness |
+| Malformed, null, partial, empty responses | 3, 6, 15 | **T32** (malformed), T25 (null/empty), T20 (partial), T3 (empty), **T36** (null reference arrays across all five categories) |
 
 This audit is what produced T32, T33 and T34. The pre-XV suite covered null, partial and empty responses but had **no test for a malformed body**, and no test at all for FR-011's requirement that the character section fails independently of the film's own fields. Both were invisible until the mandatory list was checked category by category rather than requirement by requirement.
 
@@ -227,6 +249,7 @@ XV: *"No production behavior is complete unless it has a corresponding automated
 |---|---|
 | `Films.xaml`, `FilmDetails.xaml` + code-behind | Declarative layout; code-behind is `InitializeComponent()` only. Requires the UWP runtime. XV-exempt; [quickstart.md](./quickstart.md) §5. |
 | `Resources.resw` entries | Resource text. XV-exempt. §5 checks for the `[Key.Not.Found]` marker. |
+| The expander template in `FilmDetails.xaml` (`ToggleButton` + `BoolToVisibilityConverter`) | Declarative layout, and there is no `Expander` control to test even if XAML were testable. The behaviour behind it — `IsExpanded` triggering exactly one load — is **not** exempt and is driven by T39. §5 checks the visual toggle. |
 | `PageKey` members, `NavigationModule` / `WebServicesModule` registrations | Mechanical registration, explicitly XV-exempt. **This is the only part of the feature with no automated safety net** — §5 leads with checks that catch a page built but never registered. |
 | `ApplicationConfiguration.ServerAddress` | A constant. Asserting it equals itself tests nothing. |
 | `DrawboardCodingExercise.csproj` item entries | Build configuration. A missing `<Page>` still compiles and fails at runtime — §5 catches it. |
@@ -261,12 +284,12 @@ Constitution XIII is satisfied by "a README **or equivalent documentation**"; `S
 | 1 | **Chosen API** | Star Wars Movies API (`https://swapi.info/api`), why it was chosen over the MET alternative, and the verified response shapes — bare array, `snake_case` fields, absolute character URLs, and the id-vs-episode trap | [contracts/swapi-endpoints.md](./contracts/swapi-endpoints.md) |
 | 2 | **Architecture decisions** | Why the starter framework was reused unchanged; `IStarWarsService` above `IAPIClient`; DTOs kept apart from display models; `PageViewModelBase`; the decisions and rejected alternatives in R1–R9 | [research.md](./research.md) |
 | 3 | **Assumptions** | Everything in the spec's Assumptions section, plus the five clarification answers and what each reversed | [spec.md](./spec.md) |
-| 4 | **Limitations** | The 15-second budget stops the *caller* but does not abort the request; no caching or persistence; Characters only; English only; accessibility limited to stock controls; DI/page registration has no automated safety net | R3, plan exemptions |
+| 4 | **Limitations** | The 15-second budget stops the *caller* but does not abort the request; no caching or persistence, so re-entering a film reloads every section; related records show names only, with no drill-down; the concurrency cap is per section, so five expanded sections can reach 30 in-flight requests; English only; accessibility limited to stock controls; DI/page registration has no automated safety net | R3, R10, plan exemptions |
 | 5 | **How to build and run** | VS 2026 + UWP workload + Windows 11 SDK; x64/ARM64 only (never `AnyCPU`); MSBuild for the UWP project, `dotnet build` for the rest; how to point at an unreachable host to demo failures | [quickstart.md](./quickstart.md) §1–3 |
 | 6 | **How to run tests** | `dotnet test` on the unit-test project; that the suite is deterministic and runs with **no network**; that the request budget is injected so no test waits 15 real seconds | [quickstart.md](./quickstart.md) §4 |
 | 7 | **Error handling approach** | The failure taxonomy and *why the distinctions exist*: recoverable failures get retry/cancel via `IUserInteractionService`; a 404 on a film id is an invalid selection, **not** a retryable error, because retrying a wrong id can never succeed; invalid navigation parameters short-circuit before any request; partial character failure keeps successes while total failure is retryable; nothing fails silently or strands the user on a spinner | [contracts/IStarWarsService.md](./contracts/IStarWarsService.md) |
 | 8 | **Progress / loading behaviour** | How `NotifyBusyEvent`/`NotifyDoneEvent` drive the shell's progress ring; that `PageViewModelBase` captures one message string and posts both events from it with done in `finally`, making a mismatch structurally impossible; **why that matters** — `ShellViewModel.OnNotifyDone` calls `RemoveAt(IndexOf(...))` with no `-1` guard, so a mismatched pair throws on the UI thread; that the film load and character load carry independent progress; and that progress clears on success, failure, cancel and unexpected exception | R4 |
-| 9 | **Future extension ideas** | `CancellationToken` on `IAPIClient` so a timeout truly aborts (the direct fix for limitation 4); the other four related categories (planets, starships, vehicles, species); caching the film list; search and filter; deep-linking, which the identifier-based navigation already permits; further languages, which the localization work makes a content-only change | R3, spec Out of Scope |
+| 9 | **Future extension ideas** | `CancellationToken` on `IAPIClient` so a timeout truly aborts (the direct fix for the first limitation); drill-down from a related record into its own detail page, which `NamedResourceDto.Url` already carries the identifier for; caching the film list and resolved sections; search and filter; deep-linking, which the identifier-based navigation already permits; further languages, which the localization work makes a content-only change | R3, R10, spec Out of Scope |
 | 10 | **AI-assisted development** | What AI produced; the challenges it hit; the manual corrections made; and the **validation evidence** — the TDD commit sequence required by XIV, plus every item on the documented-exemptions table with its reason | XIII, XIV |
 
 ### On section 10
@@ -288,6 +311,7 @@ Complete — see [research.md](./research.md). Nine decisions recorded, two of t
 | R7 | Film id passed as an opaque `string`; 404 ⇒ invalid selection, not retry | FR-006, FR-013 |
 | R8 | Page state as an enum plus derived bools, reusing `BoolToVisibilityConverter` | No new converters needed |
 | R9 | Two-beat red (stub → failing behaviour test) for TDD in a compiled language | Constitution XV |
+| R10 | One `NamedResourceDto` and one retrieval method for all five categories; `RelatedCategory` stays in the display layer; sections load on first expansion | **Verified** against the live API for all five categories |
 
 ## Phase 1: Design & Contracts
 

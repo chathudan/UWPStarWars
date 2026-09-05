@@ -10,19 +10,21 @@ public interface IStarWarsService
 {
     Task<IReadOnlyList<FilmDto>> GetFilmsAsync();
     Task<FilmDto> GetFilmAsync(string filmId);
-    Task<CharacterLoadResult> GetCharactersAsync(IReadOnlyList<string> characterUrls);
+    Task<RelatedResourceLoadResult> GetRelatedResourcesAsync(IReadOnlyList<string> resourceUrls);
 }
 
-public sealed class CharacterLoadResult
+public sealed class RelatedResourceLoadResult
 {
-    public IReadOnlyList<PersonDto> Characters { get; }  // in requested order, failures removed
+    public IReadOnlyList<NamedResourceDto> Resources { get; }  // in requested order, failures removed
     public int RequestedCount { get; }
     public int FailedCount { get; }
-    public bool IsPartial => FailedCount > 0 && Characters.Count > 0;
+    public bool IsPartial => FailedCount > 0 && Resources.Count > 0;
 }
 ```
 
-`CharacterLoadResult` exists because "some characters failed" is a first-class outcome (FR-012), not an exception and not a silently shorter list. A bare `IReadOnlyList<PersonDto>` would make partial failure indistinguishable from a film that genuinely has fewer characters.
+`RelatedResourceLoadResult` exists because "some entries failed" is a first-class outcome (FR-012), not an exception and not a silently shorter list. A bare `IReadOnlyList<NamedResourceDto>` would make partial failure indistinguishable from a film that genuinely references fewer entries.
+
+> **One method, five categories.** This method is category-agnostic on purpose: it takes URLs and returns names, and nothing in it knows whether it is fetching people or starships. `RelatedCategory` never crosses this boundary — it is a display grouping, and pushing it down here would buy a `switch` and five near-identical code paths for no behavioural gain (Principle II). It replaces the earlier `GetCharactersAsync`/`CharacterLoadResult`/`PersonDto` trio, which were correct only while Characters was the sole category.
 
 ---
 
@@ -57,21 +59,23 @@ Retrieves one film by its opaque identifier.
 
 > **Why `null` rather than an exception**: a 404 means the id is wrong, and no amount of retrying fixes a wrong id. Returning `null` lets `FilmDetailsViewModel` render `InvalidSelection` (which offers a way back to the list) instead of `Error` (which offers a pointless Retry). This is FR-013's whole point. See [research.md](../research.md) R7.
 
-## `GetCharactersAsync(IReadOnlyList<string> characterUrls)`
+## `GetRelatedResourcesAsync(IReadOnlyList<string> resourceUrls)`
 
-Retrieves the people a film references.
+Retrieves the named records a film references, for any one of the five categories.
 
 | Aspect | Contract |
 |---|---|
-| Input | Absolute SWAPI URLs, exactly as they appear in `FilmDto.Characters` |
+| Input | Absolute SWAPI URLs, exactly as they appear in `FilmDto.Characters` / `.Planets` / `.Starships` / `.Vehicles` / `.Species` |
 | URL handling | Each is normalised to a path relative to `IAPISettings.ServerAddress` before being handed to `IAPIClient`, so `IAPIClient` stays the single HTTP surface (AC-006) |
-| Concurrency | At most **6** in flight (V7) |
+| Concurrency | At most **6** in flight (V7), **per call** — five concurrent sections can therefore have up to 30 requests in flight between them |
 | Ordering | Results in **input order**, guaranteed by `Task.WhenAll`'s positional results — never completion order (V8, FR-010) |
 | Null/empty input | Returns an empty result with `RequestedCount == 0`. Not an error — caller renders `Empty` |
 | Partial failure | Failed items are omitted; `FailedCount` reports how many. **Does not throw** (V9, FR-012) |
 | Total failure | When every request fails, throws the **first** captured exception, so the caller can offer retry/cancel (FR-012) |
 | Unrecognised URL | A URL not under the configured base is skipped and counted as failed, with a `Warning` log. Never passed through raw |
-| Logging | `Debug` with requested/succeeded/failed counts; `Warning` per failed character; `Error` on total failure |
+| Logging | `Debug` with requested/succeeded/failed counts; `Warning` per failed record; `Error` on total failure |
+
+> **The concurrency cap is per call, not global.** Five expanded sections can put 30 requests in flight. That is accepted rather than overlooked: the cap exists to keep a single section from firing 34 requests at once, and reaching 30 requires the user to deliberately expand all five sections at once, which the lazy-load design (FR-028) makes an explicit act rather than the default. A shared global semaphore would serialise unrelated sections behind each other, making an expanded section appear frozen while another loads — a worse outcome than the burst it prevents.
 
 ---
 
@@ -88,8 +92,8 @@ How each failure must be surfaced. The distinctions are the contract — collaps
 | Network failure | Throws | prompt → `Error` | **Yes** |
 | Malformed body | Throws | prompt → `Error` | **Yes** |
 | >15s | Throws `TimeoutException` | prompt → `Error` | **Yes** |
-| Some characters fail | `IsPartial == true` | `Loaded` + notice | **No** — partial results are kept |
-| All characters fail | Throws first exception | prompt → `Error` | **Yes** |
+| Some entries in a section fail | `IsPartial == true` | that section `Loaded` + notice | **No** — partial results are kept |
+| All entries in a section fail | Throws first exception | that section: prompt → `Error` | **Yes**, for that section only |
 
 ---
 
@@ -123,8 +127,9 @@ Under Constitution XV these tests come **first** — this contract is the specif
 |---|---|---|
 | `StarWarsService` | `IAPIClient`, `IAPISettings`, `ILogger` | Canned payloads, thrown exceptions, delays past the budget, concurrency observation |
 | `FilmsViewModel` | `IStarWarsService`, `INavigationService`, `IUserInteractionService`, `IEventAggregator`, `ILocalizationService`, `ILogger` | Load, sort, empty, failure, retry/cancel, progress pairing |
-| `FilmDetailsViewModel` | as above | Valid/invalid/unknown id, character states, progress pairing |
-| `FilmMapper` | none — pure static | Mapping rules M1–M6 |
+| `FilmDetailsViewModel` | as above | Valid/invalid/unknown id, the five sections' states, lazy expansion, per-section progress pairing |
+| `RelatedCategorySection` | `IStarWarsService` via the owning VM | Load-once, expand/collapse, empty/partial/error, section-local retry |
+| `FilmMapper` | none — pure static | Mapping rules M1–M7 |
 | `SwapiResourcePath` | none — pure static | Normalisation and id extraction |
 
 The 15-second budget is tested by substituting an `IAPIClient` whose task completes later than the configured budget, with the budget injected as a `TimeSpan` so the test can use milliseconds. **No test waits 15 real seconds.**
