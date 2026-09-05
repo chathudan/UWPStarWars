@@ -81,33 +81,33 @@ Six existing projects, no new ones:
 
 ### Cycle 4 — Request budget
 
-- [ ] T021 **RED** Write failing test T23 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceBudgetTests.cs` using a substituted `IAPIClient` that completes after the injected budget — the test must use a millisecond budget and **must not wait 15 real seconds**
-- [ ] T022 **GREEN** Implement the per-request budget in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs` by racing each call against a delay, without touching `IAPIClient` or its static `HttpClient`
+- [X] T021 **RED** Write failing test T23 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceBudgetTests.cs` using a substituted `IAPIClient` that completes after the injected budget — the test must use a millisecond budget and **must not wait 15 real seconds**
+- [X] T022 **GREEN** Implement the per-request budget in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs` by racing each call against a delay, without touching `IAPIClient` or its static `HttpClient`
 
 ### Cycle 5 — Single film and not-found
 
-- [ ] T023 **RED** Write failing test T34 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceFilmTests.cs` — a 404 returns `null` while every other status still propagates
-- [ ] T024 **GREEN** Implement `GetFilmAsync` in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs`, catching only `HttpStatusException` with `NotFound`
+- [X] T023 **RED** Write failing test T34 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceFilmTests.cs` — a 404 returns `null` while every other status still propagates
+- [X] T024 **GREEN** Implement `GetFilmAsync` in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs`, catching only `HttpStatusException` with `NotFound`
 
 ### Cycle 6 — Character retrieval
 
-- [ ] T025 **RED** Write failing tests T18–T21 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceCharactersTests.cs` — film order preserved regardless of completion order, at most 6 concurrent (assert the observed peak), partial failure keeps successes, total failure throws
-- [ ] T026 **GREEN** Implement `GetCharactersAsync` in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs` using `SemaphoreSlim(6)` with `Task.WhenAll`, a per-item catch, and URLs normalised through `SwapiResourcePath`
+- [X] T025 **RED** Write failing tests T18–T21 in `DrawboardCodingExercise.Services.UnitTests/StarWars/StarWarsServiceCharactersTests.cs` — film order preserved regardless of completion order, at most 6 concurrent (assert the observed peak), partial failure keeps successes, total failure throws
+- [X] T026 **GREEN** Implement `GetCharactersAsync` in `DrawboardCodingExercise.Services/StarWars/StarWarsService.cs` using `SemaphoreSlim(6)` with `Task.WhenAll`, a per-item catch, and URLs normalised through `SwapiResourcePath`
 
 ### Cycle 7 — Progress event pairing
 
-- [ ] T027 Create the `PageLoadState` enum (`Loading`, `Loaded`, `Empty`, `Error`, `InvalidSelection`) in `DrawboardCodingExercise.ViewModel/PageLoadState.cs`
-- [ ] T028 **RED** Stub `PageViewModelBase.RunBusyAsync` in `DrawboardCodingExercise.ViewModel/PageViewModelBase.cs`, then write failing tests T13–T16 against a minimal probe ViewModel in `DrawboardCodingExercise.Services.UnitTests/ViewModels/PageViewModelBaseProgressTests.cs` — assert the busy and done strings are **byte-identical**, and that done is posted on success, on failure, and on a thrown exception
-- [ ] T029 **GREEN** Implement `RunBusyAsync` in `DrawboardCodingExercise.ViewModel/PageViewModelBase.cs`, capturing the message into a single local and posting `NotifyDoneEvent` from that same local inside `finally`
+- [X] T027 Create the `PageLoadState` enum (`Loading`, `Loaded`, `Empty`, `Error`, `InvalidSelection`) in `DrawboardCodingExercise.ViewModel/PageLoadState.cs`
+- [X] T028 **RED** Stub `PageViewModelBase.RunBusyAsync` in `DrawboardCodingExercise.ViewModel/PageViewModelBase.cs`, then write failing tests T13–T16 against a minimal probe ViewModel in `DrawboardCodingExercise.Services.UnitTests/ViewModels/PageViewModelBaseProgressTests.cs` — assert the busy and done strings are **byte-identical**, and that done is posted on success, on failure, and on a thrown exception
+- [X] T029 **GREEN** Implement `RunBusyAsync` in `DrawboardCodingExercise.ViewModel/PageViewModelBase.cs`, capturing the message into a single local and posting `NotifyDoneEvent` from that same local inside `finally`
 
 ### Cycle 8 — Retry/cancel loop
 
-- [ ] T030 **RED** Write failing tests T11 and T12 against the probe ViewModel in `DrawboardCodingExercise.Services.UnitTests/ViewModels/PageViewModelBaseRetryTests.cs` — Retry re-attempts and succeeds the second time, Cancel yields `Error`, and neither leaks a progress event
-- [ ] T031 **GREEN** Implement the retry/cancel helper in `DrawboardCodingExercise.ViewModel/PageViewModelBase.cs` using `IUserInteractionService`, re-attempting without double-posting busy events
+- [X] T030 **RED** Write failing tests T11 and T12 against the probe ViewModel in `DrawboardCodingExercise.Services.UnitTests/ViewModels/PageViewModelBaseRetryTests.cs` — Retry re-attempts and succeeds the second time, Cancel yields `Error`, and neither leaks a progress event
+- [X] T031 **GREEN** Implement the retry/cancel helper in `DrawboardCodingExercise.ViewModel/PageViewModelBase.cs` using `IUserInteractionService`, re-attempting without double-posting busy events
 
 ### Wiring
 
-- [ ] T032 Register `StarWarsService` as `IStarWarsService` in `DrawboardCodingExercise/Module/WebServicesModule.cs`
+- [X] T032 Register `StarWarsService` as `IStarWarsService` in `DrawboardCodingExercise/Module/WebServicesModule.cs`
 
 **Checkpoint**: The entire API and state machinery exists and is fully covered by tests, with no UWP dependency. User stories can now begin.
 
