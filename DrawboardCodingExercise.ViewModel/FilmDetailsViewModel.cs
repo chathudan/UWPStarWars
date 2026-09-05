@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using DrawboardCodingExercise.Contracts.CoreFramework;
 using DrawboardCodingExercise.Contracts.Services;
 using DrawboardCodingExercise.Services.StarWars;
@@ -21,6 +22,8 @@ public partial class FilmDetailsViewModel : PageViewModelBase, INavigateToAware,
 	private readonly IStarWarsService _starWarsService;
 	private readonly ILocalizationService _localizationService;
 	private readonly ILogger _logger;
+
+	private string? _filmId;
 
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(IsLoading))]
@@ -86,15 +89,24 @@ public partial class FilmDetailsViewModel : PageViewModelBase, INavigateToAware,
 
 	public string PageHeader => "FilmDetails";
 
-	public async Task OnNavigatedToAsync(object parameter)
+	public Task OnNavigatedToAsync(object parameter)
 	{
 		// V1, V2: a missing, non-string, or blank identifier is invalid and must NOT issue a
 		// request - a broken navigation call must never generate network traffic (FR-013).
 		if (!(parameter is string filmId) || string.IsNullOrWhiteSpace(filmId))
 		{
 			FilmState = PageLoadState.InvalidSelection;
-			return;
+			return Task.CompletedTask;
 		}
+
+		// Retained so the on-page retry can reload without a navigation parameter to hand.
+		_filmId = filmId;
+		return LoadFilmAndCharactersAsync(filmId);
+	}
+
+	private async Task LoadFilmAndCharactersAsync(string filmId)
+	{
+		FilmState = PageLoadState.Loading;
 
 		// NavigationService.NavigateAsync logs Fatal and rethrows anything that escapes here, so
 		// every failure must become a page state rather than propagate (contracts/navigation.md).
@@ -144,6 +156,20 @@ public partial class FilmDetailsViewModel : PageViewModelBase, INavigateToAware,
 			_localizationService.Translate("Film.EpisodeLabel.Text"));
 		FilmState = PageLoadState.Loaded;
 	}
+
+	/// <summary>On-page retry for the film itself, shown in the film's error state (FR-018).</summary>
+	[RelayCommand]
+	private Task RetryFilm() =>
+		_filmId is null ? Task.CompletedTask : LoadFilmAndCharactersAsync(_filmId);
+
+	/// <summary>
+	/// On-page retry for the character section only. Deliberately does NOT re-request the film:
+	/// it is already loaded and on screen, so re-fetching it would be wasted work and a visible
+	/// flicker for the user.
+	/// </summary>
+	[RelayCommand]
+	private Task RetryCharacters() =>
+		Film is null ? Task.CompletedTask : LoadCharactersAsync(Film.CharacterUrls);
 
 	private async Task LoadCharactersAsync(IReadOnlyList<string> characterUrls)
 	{
