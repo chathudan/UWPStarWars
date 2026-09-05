@@ -22,9 +22,11 @@
 		           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
 		           HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-		<TextBlock Text="{Binding ErrorMessage}"
-		           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
-		           HorizontalAlignment="Left" VerticalAlignment="Top" />
+		<StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+		            HorizontalAlignment="Left" VerticalAlignment="Top">
+			<TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Margin="0,0,0,8" />
+			<Button Content="{Binding RetryLabel}" Command="{Binding RetryCommand}" HorizontalAlignment="Left" />
+		</StackPanel>
 
 		<ListView ItemsSource="{Binding Films}"
 		          Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibilityConverter}}"

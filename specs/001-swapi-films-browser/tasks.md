@@ -177,13 +177,13 @@ Six existing projects, no new ones:
 
 **Independent Test**: Point `ServerAddress` at an unreachable host. Each page shows the retry/cancel dialog; Retry succeeds once reachable; Cancel leaves a readable error state with a working on-page retry and no progress left spinning.
 
-- [ ] T056 [US4] **RED** Write failing retry/cancel tests for the real `FilmsViewModel` in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmsViewModelTests.cs` — failure prompts through `IUserInteractionService`, Retry succeeds on the second attempt, Cancel yields `Error`, and progress is cleared in both outcomes
-- [ ] T057 [US4] **GREEN** Route film-list retrieval through the retry/cancel helper and expose an on-page retry command in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`
-- [ ] T058 [US4] **RED** Write the equivalent failing tests for `FilmDetailsViewModel`, covering the film load and the character load separately, in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmDetailsViewModelTests.cs`
-- [ ] T059 [US4] **GREEN** Route both detail retrievals through the retry/cancel helper and expose their on-page retry commands in `DrawboardCodingExercise.ViewModel/FilmDetailsViewModel.cs` — retrying characters must not re-request the film
-- [ ] T060 [US4] Add the error-state text and retry-affordance strings to `DrawboardCodingExercise/Strings/en/Resources.resw`
-- [ ] T061 [P] [US4] Add the error-state region with its retry button to `DrawboardCodingExercise/View/Films.xaml`
-- [ ] T062 [P] [US4] Add error-state regions with retry buttons for both the film and character sections to `DrawboardCodingExercise/View/FilmDetails.xaml`
+- [X] T056 [US4] **RED** Write failing retry/cancel tests for the real `FilmsViewModel` in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmsViewModelTests.cs` — failure prompts through `IUserInteractionService`, Retry succeeds on the second attempt, Cancel yields `Error`, and progress is cleared in both outcomes
+- [X] T057 [US4] **GREEN** Route film-list retrieval through the retry/cancel helper and expose an on-page retry command in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`
+- [X] T058 [US4] **RED** Write the equivalent failing tests for `FilmDetailsViewModel`, covering the film load and the character load separately, in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmDetailsViewModelTests.cs`
+- [X] T059 [US4] **GREEN** Route both detail retrievals through the retry/cancel helper and expose their on-page retry commands in `DrawboardCodingExercise.ViewModel/FilmDetailsViewModel.cs` — retrying characters must not re-request the film
+- [X] T060 [US4] Add the error-state text and retry-affordance strings to `DrawboardCodingExercise/Strings/en/Resources.resw`
+- [X] T061 [P] [US4] Add the error-state region with its retry button to `DrawboardCodingExercise/View/Films.xaml`
+- [X] T062 [P] [US4] Add error-state regions with retry buttons for both the film and character sections to `DrawboardCodingExercise/View/FilmDetails.xaml`
 
 **Checkpoint**: Every user story is complete and the failure matrix is covered.
 

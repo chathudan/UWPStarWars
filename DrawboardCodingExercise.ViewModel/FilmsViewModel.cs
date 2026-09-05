@@ -45,6 +45,7 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 	// combination entirely.
 	public string EmptyMessage => _localizationService.Translate("Films.Empty.Text");
 	public string ErrorMessage => _localizationService.Translate("Films.Error.Text");
+	public string RetryLabel => _localizationService.Translate("Common.RetryButton.Content");
 
 	public FilmsViewModel(
 		IStarWarsService starWarsService,

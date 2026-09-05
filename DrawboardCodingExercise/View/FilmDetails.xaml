@@ -22,9 +22,11 @@
 		           Visibility="{Binding IsInvalidSelection, Converter={StaticResource BoolToVisibilityConverter}}"
 		           TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-		<TextBlock Text="{Binding ErrorMessage}"
-		           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
-		           HorizontalAlignment="Left" VerticalAlignment="Top" />
+		<StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+		            HorizontalAlignment="Left" VerticalAlignment="Top">
+			<TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Margin="0,0,0,8" />
+			<Button Content="{Binding RetryLabel}" Command="{Binding RetryFilmCommand}" HorizontalAlignment="Left" />
+		</StackPanel>
 
 		<ScrollViewer Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibilityConverter}}"
 		              VerticalScrollBarVisibility="Auto">
@@ -59,9 +61,12 @@
 				           Visibility="{Binding IsCharactersEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
 				           TextWrapping="Wrap" Margin="0,0,0,8" />
 
-				<TextBlock Text="{Binding CharactersErrorMessage}"
-				           Visibility="{Binding HasCharactersError, Converter={StaticResource BoolToVisibilityConverter}}"
-				           TextWrapping="Wrap" Margin="0,0,0,8" />
+				<StackPanel Visibility="{Binding HasCharactersError, Converter={StaticResource BoolToVisibilityConverter}}"
+				            Margin="0,0,0,8">
+					<TextBlock Text="{Binding CharactersErrorMessage}" TextWrapping="Wrap" Margin="0,0,0,8" />
+					<!-- Retries only the characters; the film above stays as it is. -->
+					<Button Content="{Binding RetryLabel}" Command="{Binding RetryCharactersCommand}" HorizontalAlignment="Left" />
+				</StackPanel>
 
 				<TextBlock Text="{Binding CharactersPartialMessage}"
 				           Visibility="{Binding HasPartialCharacterFailure, Converter={StaticResource BoolToVisibilityConverter}}"

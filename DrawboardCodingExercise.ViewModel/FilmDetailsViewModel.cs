@@ -73,6 +73,7 @@ public partial class FilmDetailsViewModel : PageViewModelBase, INavigateToAware,
 	public string CharactersEmptyMessage => _localizationService.Translate("FilmDetails.Characters.Empty.Text");
 	public string CharactersErrorMessage => _localizationService.Translate("FilmDetails.Characters.Error.Text");
 	public string CharactersPartialMessage => _localizationService.Translate("FilmDetails.Characters.Partial.Text");
+	public string RetryLabel => _localizationService.Translate("Common.RetryButton.Content");
 
 	public FilmDetailsViewModel(
 		IStarWarsService starWarsService,
