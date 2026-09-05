@@ -119,15 +119,15 @@ Six existing projects, no new ones:
 
 **Independent Test**: Launch the app with a working connection — the film list appears populated with titles and episode numbers sorted by episode, with progress shown while loading and cleared afterwards.
 
-- [ ] T033 [US1] **RED** Stub `FilmsViewModel : PageViewModelBase, INavigateToAware, IProvidePageHeader` in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`, then write failing tests T1, T3, T17 and the real-ViewModel half of T13/T16 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmsViewModelTests.cs` — films load, an empty response yields `Empty` rather than `Error`, `OnNavigatedToAsync` never propagates an exception, and a load posts **exactly one `NotifyBusyEvent` matched by a byte-identical `NotifyDoneEvent`** on the substituted `IEventAggregator`, on both the success and failure paths
-- [ ] T034 [US1] **GREEN** Implement the load with `Loaded`/`Empty`/`Error` states and progress in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`, mapping through `FilmMapper` and bracketing the call in `RunBusyAsync`
-- [ ] T035 [US1] **RED** Write failing test T2 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmsViewModelTests.cs` — an **unordered** service response is presented ascending by episode number
-- [ ] T036 [US1] **GREEN** Implement ascending episode-number ordering in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`, sorting on the `int` and never on the display label
-- [ ] T037 [US1] Add `PageHeader.Films.Text`, the film-list empty-state message and the episode-label format to `DrawboardCodingExercise/Strings/en/Resources.resw`
-- [ ] T038 [US1] Create `Films.xaml` and `Films.xaml.cs` in `DrawboardCodingExercise/View/` — a list of title and episode number, `x:Uid`-localized, with loading and empty regions bound through the existing `BoolToVisibilityConverter`; code-behind contains `InitializeComponent()` only
-- [ ] T039 [US1] Add `<Compile Include="View\Films.xaml.cs">` and `<Page Include="View\Films.xaml">` entries to `DrawboardCodingExercise/DrawboardCodingExercise.csproj` — the project is old-style MSBuild and does **not** glob files
-- [ ] T040 [US1] Register `builder.RegisterView<Films, FilmsViewModel>(PageKey.Films);` in `DrawboardCodingExercise/Module/NavigationModule.cs`
-- [ ] T041 [US1] Change the startup navigation target to `PageKey.Films` in `DrawboardCodingExercise.ViewModel/ShellViewModel.cs`
+- [X] T033 [US1] **RED** Stub `FilmsViewModel : PageViewModelBase, INavigateToAware, IProvidePageHeader` in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`, then write failing tests T1, T3, T17 and the real-ViewModel half of T13/T16 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmsViewModelTests.cs` — films load, an empty response yields `Empty` rather than `Error`, `OnNavigatedToAsync` never propagates an exception, and a load posts **exactly one `NotifyBusyEvent` matched by a byte-identical `NotifyDoneEvent`** on the substituted `IEventAggregator`, on both the success and failure paths
+- [X] T034 [US1] **GREEN** Implement the load with `Loaded`/`Empty`/`Error` states and progress in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`, mapping through `FilmMapper` and bracketing the call in `RunBusyAsync`
+- [X] T035 [US1] **RED** Write failing test T2 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmsViewModelTests.cs` — an **unordered** service response is presented ascending by episode number
+- [X] T036 [US1] **GREEN** Implement ascending episode-number ordering in `DrawboardCodingExercise.ViewModel/FilmsViewModel.cs`, sorting on the `int` and never on the display label
+- [X] T037 [US1] Add `PageHeader.Films.Text`, the film-list empty-state message and the episode-label format to `DrawboardCodingExercise/Strings/en/Resources.resw`
+- [X] T038 [US1] Create `Films.xaml` and `Films.xaml.cs` in `DrawboardCodingExercise/View/` — a list of title and episode number, `x:Uid`-localized, with loading and empty regions bound through the existing `BoolToVisibilityConverter`; code-behind contains `InitializeComponent()` only
+- [X] T039 [US1] Add `<Compile Include="View\Films.xaml.cs">` and `<Page Include="View\Films.xaml">` entries to `DrawboardCodingExercise/DrawboardCodingExercise.csproj` — the project is old-style MSBuild and does **not** glob files
+- [X] T040 [US1] Register `builder.RegisterView<Films, FilmsViewModel>(PageKey.Films);` in `DrawboardCodingExercise/Module/NavigationModule.cs`
+- [X] T041 [US1] Change the startup navigation target to `PageKey.Films` in `DrawboardCodingExercise.ViewModel/ShellViewModel.cs`
 
 **Checkpoint**: The app launches on a working, correctly ordered film list. This is the MVP — demonstrable on its own.
 

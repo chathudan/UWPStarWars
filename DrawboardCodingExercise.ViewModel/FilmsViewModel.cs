@@ -21,7 +21,18 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 	private readonly ILogger _logger;
 
 	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(IsLoading))]
+	[NotifyPropertyChangedFor(nameof(IsEmpty))]
+	[NotifyPropertyChangedFor(nameof(HasError))]
+	[NotifyPropertyChangedFor(nameof(IsLoaded))]
 	private PageLoadState _state = PageLoadState.Loading;
+
+	// Derived booleans so XAML can bind through the existing BoolToVisibilityConverter without a
+	// new enum-to-visibility converter (research.md R8).
+	public bool IsLoading => State == PageLoadState.Loading;
+	public bool IsEmpty => State == PageLoadState.Empty;
+	public bool HasError => State == PageLoadState.Error;
+	public bool IsLoaded => State == PageLoadState.Loaded;
 
 	public FilmsViewModel(
 		IStarWarsService starWarsService,

@@ -89,6 +89,7 @@ public class StarWarsService : IStarWarsService
 	// FR-010: at most this many character requests in flight at once. A tuning value, not a
 	// contract - chosen to be civil to a free community-run mirror rather than to satisfy any
 	// specific requirement on the exact number. See research.md R5.
+	// TODO: move to ApplicationConfiguration
 	private const int MaxConcurrentCharacterRequests = 6;
 
 	public async Task<CharacterLoadResult> GetCharactersAsync(IReadOnlyList<string> characterUrls)

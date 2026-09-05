@@ -50,7 +50,7 @@ public partial class ShellViewModel : ObservableObject, INavigateToAware, IDispo
 		_subscriptions.Add(_eventAggregator.SubscribeOnUI<NotifyBusyEvent>(OnNotifyBusy));
 		_subscriptions.Add(_eventAggregator.SubscribeOnUI<NotifyDoneEvent>(OnNotifyDone));
 			
-		await _navigationService.NavigateAsync(PageKey.Welcome).ConfigureAwait(true);
+		await _navigationService.NavigateAsync(PageKey.Films).ConfigureAwait(true);
 	}
 
 	private void OnNotifyDone(NotifyDoneEvent obj)

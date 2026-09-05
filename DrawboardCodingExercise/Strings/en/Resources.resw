@@ -135,4 +135,25 @@
   <data name="PageHeader.Welcome.Text" xml:space="preserve">
     <value>Welcome</value>
   </data>
+  <data name="PageHeader.Films.Text" xml:space="preserve">
+    <value>Films</value>
+  </data>
+  <data name="Progress.LoadingFilms.Text" xml:space="preserve">
+    <value>Loading films</value>
+  </data>
+  <data name="Value.NotAvailable.Text" xml:space="preserve">
+    <value>Not available</value>
+  </data>
+  <data name="Film.EpisodeLabel.Text" xml:space="preserve">
+    <value>Episode {0}</value>
+  </data>
+  <data name="Films.Empty.Text" xml:space="preserve">
+    <value>No films are available right now.</value>
+  </data>
+  <data name="Films.Error.Text" xml:space="preserve">
+    <value>We couldn't load the films.</value>
+  </data>
+  <data name="Common.RetryButton.Content" xml:space="preserve">
+    <value>Retry</value>
+  </data>
 </root>
