@@ -19,8 +19,18 @@ namespace DrawboardCodingExercise.ViewModel.Models;
 public static class FilmMapper
 {
 	private const string DefaultNotAvailableText = "Not available";
-	private const string DefaultEpisodeLabelFormat = "Episode {0}";
 	private const string ReleaseDateSourceFormat = "yyyy-MM-dd";
+
+	/// <summary>
+	/// Builds the episode label from an already-computed Roman numeral.
+	///
+	/// This takes a FUNCTION rather than a format string on purpose. The obvious-looking
+	/// alternative - fetching "Episode {0}" from ILocalizationService and formatting it here -
+	/// cannot work: Translate() itself ends in string.Format, so asking it for a value that
+	/// still contains {0}, without supplying the argument, throws FormatException. The caller
+	/// therefore owns the substitution and hands us the finished label.
+	/// </summary>
+	private static string DefaultEpisodeLabel(string romanNumeral) => $"Episode {romanNumeral}";
 
 	// M1: the film's identifier comes from `url` ONLY, and is never derived from EpisodeId.
 	// A film's identifier is its release-order position, unrelated to its episode number
@@ -28,7 +38,7 @@ public static class FilmMapper
 	public static FilmListItem ToListItem(
 		FilmDto dto,
 		string notAvailableText = DefaultNotAvailableText,
-		string episodeLabelFormat = DefaultEpisodeLabelFormat)
+		Func<string, string> episodeLabelFormatter = null)
 	{
 		if (dto is null)
 		{
@@ -39,13 +49,13 @@ public static class FilmMapper
 			id: SwapiResourcePath.ExtractId(dto.Url),
 			title: NotBlankOr(dto.Title, notAvailableText),
 			episodeNumber: dto.EpisodeId,
-			episodeLabel: EpisodeLabel(dto.EpisodeId, episodeLabelFormat));
+			episodeLabel: EpisodeLabel(dto.EpisodeId, episodeLabelFormatter));
 	}
 
 	public static FilmDetailsDisplay ToDetailsDisplay(
 		FilmDto dto,
 		string notAvailableText = DefaultNotAvailableText,
-		string episodeLabelFormat = DefaultEpisodeLabelFormat)
+		Func<string, string> episodeLabelFormatter = null)
 	{
 		if (dto is null)
 		{
@@ -56,7 +66,7 @@ public static class FilmMapper
 			id: SwapiResourcePath.ExtractId(dto.Url),
 			title: NotBlankOr(dto.Title, notAvailableText),
 			episodeNumber: dto.EpisodeId,
-			episodeLabel: EpisodeLabel(dto.EpisodeId, episodeLabelFormat),
+			episodeLabel: EpisodeLabel(dto.EpisodeId, episodeLabelFormatter),
 			releaseDateDisplay: FormatReleaseDate(dto.ReleaseDate, notAvailableText),
 			director: NotBlankOr(dto.Director, notAvailableText),
 			producer: NotBlankOr(dto.Producer, notAvailableText),
@@ -95,8 +105,11 @@ public static class FilmMapper
 
 	// M4: the label is display-only; sorting always happens on the underlying int (see the
 	// ViewModel, not here) - the mapper never sorts (M6).
-	private static string EpisodeLabel(int episodeNumber, string format) =>
-		string.Format(CultureInfo.CurrentCulture, format, ToRomanNumeral(episodeNumber));
+	private static string EpisodeLabel(int episodeNumber, Func<string, string> formatter)
+	{
+		var numeral = ToRomanNumeral(episodeNumber);
+		return formatter is null ? DefaultEpisodeLabel(numeral) : formatter(numeral);
+	}
 
 	private static readonly (int Value, string Numeral)[] RomanNumerals =
 	{

@@ -133,6 +133,36 @@ public class FilmMapperTests
 		item.Id.ShouldNotBe(item.EpisodeNumber.ToString());
 	}
 
+	// Regression: the episode label is built by a CALLER-SUPPLIED function, never by handing a
+	// format string through ILocalizationService.Translate. Translate ends in string.Format, so
+	// asking it for "Episode {0}" without supplying the argument throws FormatException - which
+	// is exactly what made the film list fail to load on every launch while all tests passed.
+	[Fact]
+	public void ToListItem_builds_the_episode_label_through_the_supplied_formatter()
+	{
+		var localization = new EchoLocalizationService();
+
+		var item = FilmMapper.ToListItem(
+			ANewHope,
+			notAvailableText: "N/A",
+			episodeLabelFormatter: numeral => localization.Translate("Film.EpisodeLabel.Text", numeral));
+
+		item.EpisodeLabel.ShouldBe("Episode IV");
+	}
+
+	[Fact]
+	public void ToDetailsDisplay_builds_the_episode_label_through_the_supplied_formatter()
+	{
+		var localization = new EchoLocalizationService();
+
+		var display = FilmMapper.ToDetailsDisplay(
+			ThePhantomMenace,
+			notAvailableText: "N/A",
+			episodeLabelFormatter: numeral => localization.Translate("Film.EpisodeLabel.Text", numeral));
+
+		display.EpisodeLabel.ShouldBe("Episode I");
+	}
+
 	[Fact]
 	public void ToDetailsDisplay_extracts_the_id_from_url_never_from_episode_number()
 	{

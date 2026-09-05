@@ -154,7 +154,7 @@ public partial class FilmDetailsViewModel : PageViewModelBase, INavigateToAware,
 		Film = FilmMapper.ToDetailsDisplay(
 			dto,
 			_localizationService.Translate("Value.NotAvailable.Text"),
-			_localizationService.Translate("Film.EpisodeLabel.Text"));
+			numeral => _localizationService.Translate("Film.EpisodeLabel.Text", numeral));
 		FilmState = PageLoadState.Loaded;
 	}
 

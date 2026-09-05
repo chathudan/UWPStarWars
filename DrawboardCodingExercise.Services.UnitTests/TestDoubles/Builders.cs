@@ -176,9 +176,27 @@ public sealed class RecordingEventAggregator : IEventAggregator
 	}
 }
 
-/// <summary>Returns the key itself, so tests assert on stable keys instead of translated prose.</summary>
+/// <summary>
+/// Returns the key itself so tests assert on stable keys instead of translated prose - but
+/// otherwise mirrors the REAL LocalizationService, which ends with
+/// <c>string.Format(localizedString, parameters)</c>.
+///
+/// That final step matters: a resw value carrying a placeholder ("Episode {0}") throws
+/// FormatException if the caller does not supply the argument. An earlier version of this double
+/// skipped the formatting entirely, so a caller that forgot its argument passed every test here
+/// and then threw on every launch of the real app. Keys with placeholders are reproduced
+/// faithfully so that mistake fails in the suite instead.
+/// </summary>
 public sealed class EchoLocalizationService : ILocalizationService
 {
-	public string Translate(string key, params object[] parameters) =>
-		parameters is { Length: > 0 } ? $"{key}:{string.Join(",", parameters)}" : key;
+	private static readonly Dictionary<string, string> Values = new()
+	{
+		["Film.EpisodeLabel.Text"] = "Episode {0}"
+	};
+
+	public string Translate(string key, params object[] parameters)
+	{
+		var value = Values.TryGetValue(key, out var known) ? known : key;
+		return string.Format(value, parameters ?? Array.Empty<object>());
+	}
 }

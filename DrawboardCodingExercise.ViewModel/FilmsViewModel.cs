@@ -102,7 +102,9 @@ public partial class FilmsViewModel : PageViewModelBase, INavigateToAware, IProv
 			.Select(dto => FilmMapper.ToListItem(
 				dto,
 				_localizationService.Translate("Value.NotAvailable.Text"),
-				_localizationService.Translate("Film.EpisodeLabel.Text")))
+				// The numeral is passed AS the format argument. Asking Translate for the raw
+				// "Episode {0}" without an argument throws, because Translate itself formats.
+				numeral => _localizationService.Translate("Film.EpisodeLabel.Text", numeral)))
 			// FR-003: ascending by episode number, applied here rather than relying on the
 			// order the source returns - sorted on the int, never on the display label (M6).
 			.OrderBy(item => item.EpisodeNumber)
