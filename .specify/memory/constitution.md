@@ -209,3 +209,18 @@ TDD is mandatory for:
 Pure XAML layout changes, resource text changes, README updates, app manifest changes, and mechanical Autofac/PageKey registrations MAY be implemented without test-first development, but they MUST still be manually validated.
 
 No production behavior is complete unless it has a corresponding automated test or a documented reason why automated testing is not practical in this UWP exercise.
+
+
+## XVI. Reviewable Implementation Cycles
+
+Implementation MUST proceed in small, reviewable TDD cycles.
+
+Each cycle MUST include:
+
+1. a focused failing test or documented manual-validation reason,
+2. the smallest production change needed to satisfy it,
+3. passing relevant automated tests,
+4. review of changed files against this constitution,
+5. a commit once the cycle is green.
+
+Large implementation batches SHOULD be avoided unless the changes are purely mechanical or documentation-only.
