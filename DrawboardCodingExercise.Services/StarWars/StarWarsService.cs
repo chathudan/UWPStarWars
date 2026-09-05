@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using DrawboardCodingExercise.Services.StarWars.Dtos;
 using Serilog;
@@ -84,8 +86,67 @@ public class StarWarsService : IStarWarsService
 		}
 	}
 
-	public Task<CharacterLoadResult> GetCharactersAsync(IReadOnlyList<string> characterUrls)
+	// FR-010: at most this many character requests in flight at once. A tuning value, not a
+	// contract - chosen to be civil to a free community-run mirror rather than to satisfy any
+	// specific requirement on the exact number. See research.md R5.
+	private const int MaxConcurrentCharacterRequests = 6;
+
+	public async Task<CharacterLoadResult> GetCharactersAsync(IReadOnlyList<string> characterUrls)
 	{
-		throw new NotImplementedException();
+		if (characterUrls is null || characterUrls.Count == 0)
+		{
+			return new CharacterLoadResult(Array.Empty<PersonDto>(), requestedCount: 0, failedCount: 0);
+		}
+
+		using (var throttle = new SemaphoreSlim(MaxConcurrentCharacterRequests))
+		{
+			// Task.WhenAll returns results positionally, preserving the caller's requested
+			// order regardless of which request actually completes first (FR-010, V8).
+			var tasks = characterUrls.Select(url => FetchOneCharacterAsync(url, throttle)).ToArray();
+			var slots = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+			var characters = slots.Where(slot => slot.Person != null).Select(slot => slot.Person).ToList();
+			var failedCount = slots.Count(slot => slot.Person is null);
+
+			if (characters.Count == 0 && failedCount > 0)
+			{
+				// Every request failed - that is a recoverable failure the caller can retry,
+				// not a silently-empty character list (FR-012).
+				var firstFailure = slots.First(slot => slot.Failure != null).Failure;
+				_logger.Error(firstFailure, "Failed to retrieve any of {RequestedCount} Star Wars characters");
+				throw firstFailure;
+			}
+
+			return new CharacterLoadResult(characters, requestedCount: characterUrls.Count, failedCount: failedCount);
+		}
+	}
+
+	private async Task<(PersonDto Person, Exception Failure)> FetchOneCharacterAsync(string characterUrl, SemaphoreSlim throttle)
+	{
+		var relativePath = SwapiResourcePath.ToRelativePath(characterUrl, _apiSettings.ServerAddress);
+		if (relativePath is null)
+		{
+			var failure = new InvalidOperationException($"Character URL '{characterUrl}' is not under the configured API base.");
+			_logger.Warning("Skipped a character URL that was not under the configured base: {CharacterUrl}", characterUrl);
+			return (null, failure);
+		}
+
+		await throttle.WaitAsync().ConfigureAwait(false);
+		try
+		{
+			var person = await WithBudgetAsync(() => _apiClient.GetAsync<PersonDto>(relativePath)).ConfigureAwait(false);
+			return (person, null);
+		}
+		catch (Exception ex)
+		{
+			// A single failing character never fails the whole batch (FR-012, V9) - the
+			// exception is captured here in case every request ends up failing.
+			_logger.Warning("Failed to retrieve Star Wars character at {CharacterUrl}", characterUrl);
+			return (null, ex);
+		}
+		finally
+		{
+			throttle.Release();
+		}
 	}
 }
