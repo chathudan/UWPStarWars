@@ -9,14 +9,21 @@ using Xunit;
 namespace DrawboardCodingExercise.Services.UnitTests.ViewModels;
 
 /// <summary>
-/// A minimal subclass that exposes the protected RunBusyAsync for testing. It carries no
-/// behaviour of its own - PageViewModelBase is the thing under test.
+/// A minimal subclass that exposes PageViewModelBase's protected members for testing. It
+/// carries no behaviour of its own - PageViewModelBase is the thing under test.
 /// </summary>
 internal sealed class ProbeViewModel : PageViewModelBase
 {
-	public ProbeViewModel(DrawboardCodingExercise.Contracts.Services.IEventAggregator eventAggregator) : base(eventAggregator) { }
+	public ProbeViewModel(
+		DrawboardCodingExercise.Contracts.Services.IEventAggregator eventAggregator,
+		DrawboardCodingExercise.Contracts.Services.IUserInteractionService userInteractionService = null)
+		: base(eventAggregator, userInteractionService)
+	{
+	}
 
 	public Task RunAsync(string message, Func<Task> work) => RunBusyAsync(message, work);
+
+	public Task<bool> InvokeRunWithRetryAsync(string message, Func<Task> work) => RunWithRetryAsync(message, work);
 }
 
 /// <summary>
