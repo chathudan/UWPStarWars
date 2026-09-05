@@ -40,13 +40,25 @@ public sealed class FakeApiClient : IAPIClient
 {
 	private readonly Dictionary<string, string> _responsesByPath = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, Exception> _failuresByPath = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, TimeSpan> _delaysByPath = new(StringComparer.OrdinalIgnoreCase);
 	private readonly ConcurrentBag<string> _requestedPaths = new();
 
 	private int _inFlight;
 	private int _peakInFlight;
 
-	/// <summary>Delay applied to every call, used to observe concurrency and to trip the budget.</summary>
+	/// <summary>Delay applied to every call that has no per-path delay configured.</summary>
 	public TimeSpan Delay { get; set; } = TimeSpan.Zero;
+
+	/// <summary>
+	/// Sets a delay for one specific path, distinct from the global <see cref="Delay"/>. Used to
+	/// make calls complete in a different order than they were requested in, so tests can assert
+	/// that a caller preserves request order rather than relying on completion order.
+	/// </summary>
+	public FakeApiClient DelayFor(string path, TimeSpan delay)
+	{
+		_delaysByPath[Normalise(path)] = delay;
+		return this;
+	}
 
 	/// <summary>Highest number of calls in flight simultaneously across the fake's lifetime.</summary>
 	public int PeakConcurrency => Volatile.Read(ref _peakInFlight);
@@ -83,9 +95,10 @@ public sealed class FakeApiClient : IAPIClient
 
 		try
 		{
-			if (Delay > TimeSpan.Zero)
+			var delay = _delaysByPath.TryGetValue(key, out var perPathDelay) ? perPathDelay : Delay;
+			if (delay > TimeSpan.Zero)
 			{
-				await Task.Delay(Delay).ConfigureAwait(false);
+				await Task.Delay(delay).ConfigureAwait(false);
 			}
 
 			if (_failuresByPath.TryGetValue(key, out var failure))
