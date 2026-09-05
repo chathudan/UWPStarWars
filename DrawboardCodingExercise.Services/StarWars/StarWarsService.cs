@@ -30,7 +30,7 @@ public class StarWarsService : IStarWarsService
 	{
 		try
 		{
-			var films = await _apiClient.GetAsync<List<FilmDto>>("films").ConfigureAwait(false);
+			var films = await WithBudgetAsync(() => _apiClient.GetAsync<List<FilmDto>>("films")).ConfigureAwait(false);
 			return (IReadOnlyList<FilmDto>)films ?? Array.Empty<FilmDto>();
 		}
 		catch (Exception ex)
@@ -38,6 +38,29 @@ public class StarWarsService : IStarWarsService
 			_logger.Error(ex, "Failed to retrieve the Star Wars film list");
 			throw;
 		}
+	}
+
+	/// <summary>
+	/// Races <paramref name="operation"/> against the configured request budget. IAPIClient
+	/// exposes no CancellationToken and its underlying HttpClient is static and shared, so this
+	/// only stops the *caller* waiting - the abandoned HTTP request keeps running in the
+	/// background until the platform default elapses. That trade-off is deliberate: it meets
+	/// the user-visible contract (FR-015) without touching starter framework code. See
+	/// research.md R3.
+	/// </summary>
+	private async Task<T> WithBudgetAsync<T>(Func<Task<T>> operation)
+	{
+		var operationTask = operation();
+		var delayTask = Task.Delay(_requestBudget);
+
+		var completed = await Task.WhenAny(operationTask, delayTask).ConfigureAwait(false);
+		if (completed == delayTask)
+		{
+			throw new TimeoutException(
+				$"The request did not complete within the configured {_requestBudget.TotalSeconds:0.###}s budget.");
+		}
+
+		return await operationTask.ConfigureAwait(false);
 	}
 
 	public Task<FilmDto> GetFilmAsync(string filmId)
