@@ -66,6 +66,10 @@ public partial class FilmDetailsViewModel : PageViewModelBase, INavigateToAware,
 	public string DirectorLabel => _localizationService.Translate("FilmDetails.Director.Label");
 	public string ProducerLabel => _localizationService.Translate("FilmDetails.Producer.Label");
 	public string OpeningCrawlLabel => _localizationService.Translate("FilmDetails.OpeningCrawl.Label");
+	public string CharactersLabel => _localizationService.Translate("FilmDetails.Characters.Label");
+	public string CharactersEmptyMessage => _localizationService.Translate("FilmDetails.Characters.Empty.Text");
+	public string CharactersErrorMessage => _localizationService.Translate("FilmDetails.Characters.Error.Text");
+	public string CharactersPartialMessage => _localizationService.Translate("FilmDetails.Characters.Partial.Text");
 
 	public FilmDetailsViewModel(
 		IStarWarsService starWarsService,

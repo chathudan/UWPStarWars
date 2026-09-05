@@ -160,10 +160,10 @@ Six existing projects, no new ones:
 
 **Independent Test**: Open any film's detail view — the character section shows its own progress then a populated list of names, without ever blocking the film's own details.
 
-- [ ] T052 [US3] **RED** Write failing tests T22 and T33 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmDetailsViewModelTests.cs` — a film with no characters yields the `Empty` character state, a failing character load leaves the film's own state `Loaded` with its fields readable, and a partial result reports the shortfall while keeping the successes. Also assert the character load posts its **own matched busy/done pair, distinct from the film load's**, so the two operations cannot cancel each other out in the shell's progress list
-- [ ] T053 [US3] **GREEN** Implement the independent character-section state machine in `DrawboardCodingExercise.ViewModel/FilmDetailsViewModel.cs` — started after the film resolves, holding its own `PageLoadState`, and surfacing `CharacterLoadResult.IsPartial`
-- [ ] T054 [US3] Add the character-section heading, empty-state and partial-failure strings to `DrawboardCodingExercise/Strings/en/Resources.resw`
-- [ ] T055 [US3] Add the character list section with its own loading, empty and partial regions to `DrawboardCodingExercise/View/FilmDetails.xaml`
+- [X] T052 [US3] **RED** Write failing tests T22 and T33 in `DrawboardCodingExercise.Services.UnitTests/ViewModels/FilmDetailsViewModelTests.cs` — a film with no characters yields the `Empty` character state, a failing character load leaves the film's own state `Loaded` with its fields readable, and a partial result reports the shortfall while keeping the successes. Also assert the character load posts its **own matched busy/done pair, distinct from the film load's**, so the two operations cannot cancel each other out in the shell's progress list
+- [X] T053 [US3] **GREEN** Implement the independent character-section state machine in `DrawboardCodingExercise.ViewModel/FilmDetailsViewModel.cs` — started after the film resolves, holding its own `PageLoadState`, and surfacing `CharacterLoadResult.IsPartial`
+- [X] T054 [US3] Add the character-section heading, empty-state and partial-failure strings to `DrawboardCodingExercise/Strings/en/Resources.resw`
+- [X] T055 [US3] Add the character list section with its own loading, empty and partial regions to `DrawboardCodingExercise/View/FilmDetails.xaml`
 
 **Checkpoint**: All three content stories work. Only failure-path work remains.
 

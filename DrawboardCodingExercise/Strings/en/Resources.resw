@@ -180,4 +180,19 @@
   <data name="FilmDetails.Error.Text" xml:space="preserve">
     <value>We couldn't load this film.</value>
   </data>
+  <data name="Progress.LoadingCharacters.Text" xml:space="preserve">
+    <value>Loading characters</value>
+  </data>
+  <data name="FilmDetails.Characters.Label" xml:space="preserve">
+    <value>Characters</value>
+  </data>
+  <data name="FilmDetails.Characters.Empty.Text" xml:space="preserve">
+    <value>No characters are listed for this film.</value>
+  </data>
+  <data name="FilmDetails.Characters.Error.Text" xml:space="preserve">
+    <value>We couldn't load the characters for this film.</value>
+  </data>
+  <data name="FilmDetails.Characters.Partial.Text" xml:space="preserve">
+    <value>Some characters could not be loaded.</value>
+  </data>
 </root>
