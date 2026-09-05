@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DrawboardCodingExercise.Services\DrawboardCodingExercise.Services.csproj" />
+    <ProjectReference Include="..\DrawboardCodingExercise.ViewModel\DrawboardCodingExercise.ViewModel.csproj" />
   </ItemGroup>
 
 </Project>

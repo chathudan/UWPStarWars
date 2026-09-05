@@ -15,4 +15,11 @@
     <ProjectReference Include="..\DrawboardCodingExercise.Contracts\DrawboardCodingExercise.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Lets the unit test project and the ViewModel project (FilmMapper uses SwapiResourcePath.ExtractId)
+         see internal helpers without making them public API. -->
+    <InternalsVisibleTo Include="DrawboardCodingExercise.Services.UnitTests" />
+    <InternalsVisibleTo Include="DrawboardCodingExercise.ViewModel" />
+  </ItemGroup>
+
 </Project>

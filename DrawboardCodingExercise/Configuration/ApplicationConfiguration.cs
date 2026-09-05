@@ -7,5 +7,7 @@ namespace DrawboardCodingExercise.Configuration;
 /// </summary>
 public class ApplicationConfiguration : IAPISettings
 {
-	public string ServerAddress { get; } = "https://some.api.com/";
+	// The Star Wars API. Note that this mirror returns a bare JSON array from /films (no paged
+	// envelope), and resource links inside a film are absolute URLs under this same base.
+	public string ServerAddress { get; } = "https://swapi.info/api";
 }

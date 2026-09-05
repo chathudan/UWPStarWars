@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DrawboardCodingExercise.Contracts\DrawboardCodingExercise.Contracts.csproj" />
+    <ProjectReference Include="..\DrawboardCodingExercise.Services\DrawboardCodingExercise.Services.csproj" />
   </ItemGroup>
 
 </Project>
