@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DrawboardCodingExercise.Contracts;
+using DrawboardCodingExercise.Contracts.CoreFramework;
 using DrawboardCodingExercise.Contracts.Services;
 using DrawboardCodingExercise.Services.StarWars;
 using DrawboardCodingExercise.Services.StarWars.Dtos;
@@ -37,14 +39,16 @@ public class FilmsViewModelTests
 		IStarWarsService starWarsService = null,
 		IEventAggregator eventAggregator = null,
 		IUserInteractionService userInteractionService = null,
-		ILocalizationService localizationService = null)
+		ILocalizationService localizationService = null,
+		INavigationService navigationService = null)
 	{
 		return new FilmsViewModel(
 			starWarsService ?? Substitute.For<IStarWarsService>(),
 			eventAggregator ?? new RecordingEventAggregator(),
 			userInteractionService ?? Substitute.For<IUserInteractionService>(),
 			localizationService ?? new EchoLocalizationService(),
-			Substitute.For<ILogger>());
+			Substitute.For<ILogger>(),
+			navigationService ?? Substitute.For<INavigationService>());
 	}
 
 	// T1: a successful load exposes every returned film.
@@ -148,5 +152,32 @@ public class FilmsViewModelTests
 		var busy = aggregator.Posted[0].ShouldBeOfType<DrawboardCodingExercise.Contracts.Events.NotifyBusyEvent>();
 		var done = aggregator.Posted[1].ShouldBeOfType<DrawboardCodingExercise.Contracts.Events.NotifyDoneEvent>();
 		busy.Event.ShouldBe(done.Event);
+	}
+
+	// T4: selecting a film navigates to the detail page, passing that film's opaque id -
+	// never the episode number.
+	[Fact]
+	public async Task SelectFilmCommand_navigates_to_film_details_with_the_selected_films_id()
+	{
+		var navigationService = Substitute.For<INavigationService>();
+		var sut = CreateSut(navigationService: navigationService);
+		var film = new DrawboardCodingExercise.ViewModel.Models.FilmListItem("4", "The Phantom Menace", 1, "Episode I");
+
+		await sut.SelectFilmCommand.ExecuteAsync(film);
+
+		await navigationService.Received(1).NavigateAsync(PageKey.FilmDetails, "4");
+	}
+
+	// T5: a film with no id (unparseable url) cannot be opened, so selecting it must not navigate.
+	[Fact]
+	public async Task SelectFilmCommand_does_not_navigate_when_the_film_has_no_id()
+	{
+		var navigationService = Substitute.For<INavigationService>();
+		var sut = CreateSut(navigationService: navigationService);
+		var film = new DrawboardCodingExercise.ViewModel.Models.FilmListItem(null, "Unknown Film", 0, "Episode ?");
+
+		await sut.SelectFilmCommand.ExecuteAsync(film);
+
+		await navigationService.DidNotReceive().NavigateAsync(Arg.Any<PageKey>(), Arg.Any<object>());
 	}
 }
