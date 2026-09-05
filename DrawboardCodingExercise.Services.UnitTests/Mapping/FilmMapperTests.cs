@@ -42,8 +42,8 @@ public class FilmMapperTests
 		display.Producer.ShouldBe("Gary Kurtz, Rick McCallum");
 		display.OpeningCrawl.ShouldContain("civil war");
 		display.Id.ShouldBe("1");
-		display.CharacterUrls.Count.ShouldBe(3);
-		display.CharacterUrls.ShouldContain("https://swapi.info/api/people/1");
+		display.RelatedUrls[RelatedCategory.Characters].Count.ShouldBe(3);
+		display.RelatedUrls[RelatedCategory.Characters].ShouldContain("https://swapi.info/api/people/1");
 	}
 
 	[Fact]
@@ -58,11 +58,11 @@ public class FilmMapperTests
 	}
 
 	[Fact]
-	public void ToCharacterListItem_maps_name_and_url()
+	public void ToRelatedResourceListItem_maps_name_and_url()
 	{
-		var person = AppJson.Deserialize<PersonDto>(SwapiPayloads.LukeSkywalker);
+		var person = AppJson.Deserialize<NamedResourceDto>(SwapiPayloads.LukeSkywalker);
 
-		var item = FilmMapper.ToCharacterListItem(person);
+		var item = FilmMapper.ToRelatedResourceListItem(person);
 
 		item.Name.ShouldBe("Luke Skywalker");
 		item.Url.ShouldBe("https://swapi.info/api/people/1");
@@ -98,8 +98,8 @@ public class FilmMapperTests
 	{
 		var display = FilmMapper.ToDetailsDisplay(FilmWithMissingFields);
 
-		display.CharacterUrls.ShouldNotBeNull();
-		display.CharacterUrls.ShouldBeEmpty();
+		display.RelatedUrls[RelatedCategory.Characters].ShouldNotBeNull();
+		display.RelatedUrls[RelatedCategory.Characters].ShouldBeEmpty();
 	}
 
 	// T28: an unparseable or missing release date degrades to a placeholder and never throws (FR-008, M3).
@@ -170,5 +170,57 @@ public class FilmMapperTests
 
 		display.EpisodeNumber.ShouldBe(1);
 		display.Id.ShouldBe("4");
+	}
+
+	// T36 (FR-027, M5, M7, V15): all five reference arrays are mapped, and every RelatedCategory
+	// value is present as a key even when the source array is absent or null.
+	//
+	// The absent-array half is the half that matters. A film payload omitting "vehicles" entirely
+	// is normal, and the difference between "this key maps to an empty list" and "this key is not
+	// here" is the difference between an empty section and a KeyNotFoundException on the UI
+	// thread - and only the second one is invisible until a user opens that film.
+
+	[Fact]
+	public void ToDetailsDisplay_maps_all_five_related_url_collections()
+	{
+		var display = FilmMapper.ToDetailsDisplay(ANewHope);
+
+		display.RelatedUrls[RelatedCategory.Characters].ShouldBe(new[]
+		{
+			"https://swapi.info/api/people/1",
+			"https://swapi.info/api/people/2",
+			"https://swapi.info/api/people/3"
+		});
+		display.RelatedUrls[RelatedCategory.Planets].ShouldBe(new[] { "https://swapi.info/api/planets/1" });
+		display.RelatedUrls[RelatedCategory.Starships].ShouldBe(new[] { "https://swapi.info/api/starships/2" });
+		display.RelatedUrls[RelatedCategory.Vehicles].ShouldBe(new[] { "https://swapi.info/api/vehicles/4" });
+		display.RelatedUrls[RelatedCategory.Species].ShouldBe(new[] { "https://swapi.info/api/species/1" });
+	}
+
+	[Fact]
+	public void ToDetailsDisplay_always_contains_every_category_key_even_when_the_source_array_is_absent()
+	{
+		// ThePhantomMenace's payload carries "characters" and nothing else - the other four
+		// arrays are absent from the JSON entirely, not merely empty.
+		var display = FilmMapper.ToDetailsDisplay(ThePhantomMenace);
+
+		display.RelatedUrls.Keys.ShouldBe(
+			System.Enum.GetValues(typeof(RelatedCategory)).Cast<RelatedCategory>(),
+			ignoreOrder: true);
+
+		display.RelatedUrls[RelatedCategory.Characters].Count.ShouldBe(2);
+		display.RelatedUrls[RelatedCategory.Planets].ShouldBeEmpty();
+		display.RelatedUrls[RelatedCategory.Starships].ShouldBeEmpty();
+		display.RelatedUrls[RelatedCategory.Vehicles].ShouldBeEmpty();
+		display.RelatedUrls[RelatedCategory.Species].ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void ToDetailsDisplay_maps_an_explicitly_null_array_to_an_empty_list()
+	{
+		// This payload has "characters": null - explicitly null rather than absent (M5).
+		var display = FilmMapper.ToDetailsDisplay(FilmWithMissingFields);
+
+		display.RelatedUrls[RelatedCategory.Characters].ShouldBeEmpty();
 	}
 }

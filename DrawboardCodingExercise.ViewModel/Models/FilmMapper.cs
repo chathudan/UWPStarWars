@@ -11,7 +11,7 @@ namespace DrawboardCodingExercise.ViewModel.Models;
 /// Maps API DTOs to display models. Pure and static so it is testable with no container, no
 /// substitutes, and no async - see data-model.md for the mapping rules (M1-M6) this implements.
 ///
-/// notAvailableText and episodeLabelFormat default to plain English fallbacks so the mapper
+/// notAvailableText and episodeLabelFormatter default to plain English fallbacks so the mapper
 /// needs no dependency on ILocalizationService; real callers (the ViewModels, which do have
 /// ILocalizationService via DI) pass the localized versions instead, keeping this class free of
 /// any container dependency while the shipped app still shows correctly localized text.
@@ -38,7 +38,7 @@ public static class FilmMapper
 	public static FilmListItem ToListItem(
 		FilmDto dto,
 		string notAvailableText = DefaultNotAvailableText,
-		Func<string, string> episodeLabelFormatter = null)
+		Func<string, string>? episodeLabelFormatter = null)
 	{
 		if (dto is null)
 		{
@@ -55,7 +55,7 @@ public static class FilmMapper
 	public static FilmDetailsDisplay ToDetailsDisplay(
 		FilmDto dto,
 		string notAvailableText = DefaultNotAvailableText,
-		Func<string, string> episodeLabelFormatter = null)
+		Func<string, string>? episodeLabelFormatter = null)
 	{
 		if (dto is null)
 		{
@@ -71,17 +71,56 @@ public static class FilmMapper
 			director: NotBlankOr(dto.Director, notAvailableText),
 			producer: NotBlankOr(dto.Producer, notAvailableText),
 			openingCrawl: NotBlankOr(dto.OpeningCrawl, notAvailableText),
-			characterUrls: (IReadOnlyList<string>)dto.Characters ?? Array.Empty<string>());
+			relatedUrls: BuildRelatedUrls(dto));
 	}
 
-	public static CharacterListItem ToCharacterListItem(PersonDto dto, string notAvailableText = DefaultNotAvailableText)
+	// M7 (V15): build the dictionary from the enum, not from the DTO's populated arrays, so
+	// every RelatedCategory value is always a key. Driving it the other way round - adding a key
+	// only where the source supplied an array - would leave sections looking up a missing key
+	// for any film that omits a category, and would silently drop a sixth category added to the
+	// enum but never mapped here. This way that omission is a compile error at the switch.
+	private static IReadOnlyDictionary<RelatedCategory, IReadOnlyList<string>> BuildRelatedUrls(FilmDto dto)
+	{
+		var urls = new Dictionary<RelatedCategory, IReadOnlyList<string>>();
+
+		foreach (RelatedCategory category in Enum.GetValues(typeof(RelatedCategory)))
+		{
+			urls[category] = OrEmpty(SourceListFor(dto, category));
+		}
+
+		return urls;
+	}
+
+	private static List<string> SourceListFor(FilmDto dto, RelatedCategory category)
+	{
+		switch (category)
+		{
+			case RelatedCategory.Characters: return dto.Characters;
+			case RelatedCategory.Planets: return dto.Planets;
+			case RelatedCategory.Starships: return dto.Starships;
+			case RelatedCategory.Vehicles: return dto.Vehicles;
+			case RelatedCategory.Species: return dto.Species;
+			default:
+				// Reached only by adding an enum value without mapping it here. Failing loudly at
+				// the mapper beats a KeyNotFoundException surfacing later on the UI thread.
+				throw new ArgumentOutOfRangeException(
+					nameof(category), category, "No film reference array is mapped for this related category.");
+		}
+	}
+
+	// M5: a null or absent reference array becomes an empty list, so the section shows its
+	// "nothing listed" empty state rather than dereferencing null.
+	private static IReadOnlyList<string> OrEmpty(List<string> source) =>
+		(IReadOnlyList<string>)source ?? Array.Empty<string>();
+
+	public static RelatedResourceListItem ToRelatedResourceListItem(NamedResourceDto dto, string notAvailableText = DefaultNotAvailableText)
 	{
 		if (dto is null)
 		{
 			throw new ArgumentNullException(nameof(dto));
 		}
 
-		return new CharacterListItem(NotBlankOr(dto.Name, notAvailableText), dto.Url);
+		return new RelatedResourceListItem(NotBlankOr(dto.Name, notAvailableText), dto.Url);
 	}
 
 	// M2: never let a blank source value reach the UI as a gap.
@@ -105,7 +144,7 @@ public static class FilmMapper
 
 	// M4: the label is display-only; sorting always happens on the underlying int (see the
 	// ViewModel, not here) - the mapper never sorts (M6).
-	private static string EpisodeLabel(int episodeNumber, Func<string, string> formatter)
+	private static string EpisodeLabel(int episodeNumber, Func<string, string>? formatter)
 	{
 		var numeral = ToRomanNumeral(episodeNumber);
 		return formatter is null ? DefaultEpisodeLabel(numeral) : formatter(numeral);

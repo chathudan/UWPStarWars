@@ -189,9 +189,15 @@ public sealed class RecordingEventAggregator : IEventAggregator
 /// </summary>
 public sealed class EchoLocalizationService : ILocalizationService
 {
+	// Only keys whose REAL resw value contains a format placeholder need to be listed here.
+	// Everything else echoes its key, which is enough for tests and keeps them uncoupled from
+	// display prose. A key with a placeholder cannot echo, because Translate ends in
+	// string.Format - which is exactly the trap that made the film list throw on every launch
+	// while the whole suite passed.
 	private static readonly Dictionary<string, string> Values = new()
 	{
-		["Film.EpisodeLabel.Text"] = "Episode {0}"
+		["Film.EpisodeLabel.Text"] = "Episode {0}",
+		["Progress.LoadingCategory.Text"] = "Loading {0}"
 	};
 
 	public string Translate(string key, params object[] parameters)

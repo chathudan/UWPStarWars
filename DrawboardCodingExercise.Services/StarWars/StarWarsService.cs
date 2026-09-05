@@ -86,63 +86,68 @@ public class StarWarsService : IStarWarsService
 		}
 	}
 
-	// FR-010: at most this many character requests in flight at once. A tuning value, not a
+	// FR-010: at most this many requests in flight at once, PER CALL. A tuning value, not a
 	// contract - chosen to be civil to a free community-run mirror rather than to satisfy any
 	// specific requirement on the exact number. See research.md R5.
+	//
+	// Per-call rather than shared across the whole service on purpose: five category sections
+	// expanded at once could put 30 requests in flight between them, which is accepted, because a
+	// single shared semaphore would serialise sections behind each other and make an expanded
+	// section look frozen while an unrelated one loaded. See research.md R10.
 	// TODO: move to ApplicationConfiguration
-	private const int MaxConcurrentCharacterRequests = 6;
+	private const int MaxConcurrentResourceRequests = 6;
 
-	public async Task<CharacterLoadResult> GetCharactersAsync(IReadOnlyList<string> characterUrls)
+	public async Task<RelatedResourceLoadResult> GetRelatedResourcesAsync(IReadOnlyList<string> resourceUrls)
 	{
-		if (characterUrls is null || characterUrls.Count == 0)
+		if (resourceUrls is null || resourceUrls.Count == 0)
 		{
-			return new CharacterLoadResult(Array.Empty<PersonDto>(), requestedCount: 0, failedCount: 0);
+			return new RelatedResourceLoadResult(Array.Empty<NamedResourceDto>(), requestedCount: 0, failedCount: 0);
 		}
 
-		using (var throttle = new SemaphoreSlim(MaxConcurrentCharacterRequests))
+		using (var throttle = new SemaphoreSlim(MaxConcurrentResourceRequests))
 		{
 			// Task.WhenAll returns results positionally, preserving the caller's requested
 			// order regardless of which request actually completes first (FR-010, V8).
-			var tasks = characterUrls.Select(url => FetchOneCharacterAsync(url, throttle)).ToArray();
+			var tasks = resourceUrls.Select(url => FetchOneResourceAsync(url, throttle)).ToArray();
 			var slots = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-			var characters = slots.Where(slot => slot.Person != null).Select(slot => slot.Person).ToList();
-			var failedCount = slots.Count(slot => slot.Person is null);
+			var resources = slots.Where(slot => slot.Resource != null).Select(slot => slot.Resource).ToList();
+			var failedCount = slots.Count(slot => slot.Resource is null);
 
-			if (characters.Count == 0 && failedCount > 0)
+			if (resources.Count == 0 && failedCount > 0)
 			{
 				// Every request failed - that is a recoverable failure the caller can retry,
-				// not a silently-empty character list (FR-012).
+				// not a silently-empty section (FR-012).
 				var firstFailure = slots.First(slot => slot.Failure != null).Failure;
-				_logger.Error(firstFailure, "Failed to retrieve any of {RequestedCount} Star Wars characters");
+				_logger.Error(firstFailure, "Failed to retrieve any of {RequestedCount} related Star Wars resources");
 				throw firstFailure;
 			}
 
-			return new CharacterLoadResult(characters, requestedCount: characterUrls.Count, failedCount: failedCount);
+			return new RelatedResourceLoadResult(resources, requestedCount: resourceUrls.Count, failedCount: failedCount);
 		}
 	}
 
-	private async Task<(PersonDto Person, Exception Failure)> FetchOneCharacterAsync(string characterUrl, SemaphoreSlim throttle)
+	private async Task<(NamedResourceDto Resource, Exception Failure)> FetchOneResourceAsync(string resourceUrl, SemaphoreSlim throttle)
 	{
-		var relativePath = SwapiResourcePath.ToRelativePath(characterUrl, _apiSettings.ServerAddress);
+		var relativePath = SwapiResourcePath.ToRelativePath(resourceUrl, _apiSettings.ServerAddress);
 		if (relativePath is null)
 		{
-			var failure = new InvalidOperationException($"Character URL '{characterUrl}' is not under the configured API base.");
-			_logger.Warning("Skipped a character URL that was not under the configured base: {CharacterUrl}", characterUrl);
+			var failure = new InvalidOperationException($"Resource URL '{resourceUrl}' is not under the configured API base.");
+			_logger.Warning("Skipped a resource URL that was not under the configured base: {ResourceUrl}", resourceUrl);
 			return (null, failure);
 		}
 
 		await throttle.WaitAsync().ConfigureAwait(false);
 		try
 		{
-			var person = await WithBudgetAsync(() => _apiClient.GetAsync<PersonDto>(relativePath)).ConfigureAwait(false);
-			return (person, null);
+			var resource = await WithBudgetAsync(() => _apiClient.GetAsync<NamedResourceDto>(relativePath)).ConfigureAwait(false);
+			return (resource, null);
 		}
 		catch (Exception ex)
 		{
-			// A single failing character never fails the whole batch (FR-012, V9) - the
-			// exception is captured here in case every request ends up failing.
-			_logger.Warning("Failed to retrieve Star Wars character at {CharacterUrl}", characterUrl);
+			// A single failing record never fails the whole batch (FR-012, V9) - the exception
+			// is captured here in case every request ends up failing.
+			_logger.Warning("Failed to retrieve a related Star Wars resource at {ResourceUrl}", resourceUrl);
 			return (null, ex);
 		}
 		finally

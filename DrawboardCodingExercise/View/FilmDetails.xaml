@@ -12,72 +12,175 @@
 		<valueConverters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 	</Page.Resources>
 
-	<Grid Margin="16">
-		<ProgressRing IsActive="{Binding IsLoading}"
-		              Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
-		              HorizontalAlignment="Left" VerticalAlignment="Top"
-		              Width="32" Height="32" />
+	<Grid x:Name="RootGrid">
 
-		<TextBlock Text="{Binding InvalidSelectionMessage}"
-		           Visibility="{Binding IsInvalidSelection, Converter={StaticResource BoolToVisibilityConverter}}"
-		           TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top" />
-
-		<StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
-		            HorizontalAlignment="Left" VerticalAlignment="Top">
-			<TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Margin="0,0,0,8" />
-			<Button Content="{Binding RetryLabel}" Command="{Binding RetryFilmCommand}" HorizontalAlignment="Left" />
+		<!-- Loading the film itself -->
+		<StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+		            HorizontalAlignment="Center" VerticalAlignment="Center"
+		            Orientation="Horizontal" Spacing="12">
+			<ProgressRing IsActive="{Binding IsLoading}" Width="24" Height="24" />
+			<TextBlock Text="{Binding LoadingMessage}" VerticalAlignment="Center" Opacity="0.7" />
 		</StackPanel>
 
+		<!-- Invalid selection: retry cannot help, so no retry button here -->
+		<TextBlock Text="{Binding InvalidSelectionMessage}"
+		           Visibility="{Binding IsInvalidSelection, Converter={StaticResource BoolToVisibilityConverter}}"
+		           HorizontalAlignment="Center" VerticalAlignment="Center"
+		           TextWrapping="Wrap" TextAlignment="Center" MaxWidth="420" Opacity="0.8" />
+
+		<!-- Film load failed -->
+		<StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+		            HorizontalAlignment="Center" VerticalAlignment="Center"
+		            MaxWidth="420" Spacing="12">
+			<TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" TextAlignment="Center"
+			           HorizontalAlignment="Center" />
+			<Button Content="{Binding RetryLabel}" Command="{Binding RetryFilmCommand}"
+			        HorizontalAlignment="Center" />
+		</StackPanel>
+
+		<!-- Loaded -->
 		<ScrollViewer Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibilityConverter}}"
-		              VerticalScrollBarVisibility="Auto">
-			<!-- DataContext deliberately left as the page ViewModel (not rebound to Film) so the
-			     label TextBlocks below can bind directly to the ViewModel's localized *Label
-			     properties; each data field is instead prefixed with "Film." -->
-			<StackPanel MaxWidth="720" HorizontalAlignment="Left">
-				<TextBlock Text="{Binding Film.Title}" Style="{StaticResource SubtitleTextBlockStyle}" />
-				<TextBlock Text="{Binding Film.EpisodeLabel}" Opacity="0.7" Margin="0,0,0,12" />
+		              VerticalScrollBarVisibility="Auto" Padding="0,16,0,32">
+			<StackPanel MaxWidth="760" HorizontalAlignment="Stretch" Margin="24,0" Spacing="0">
 
-				<TextBlock Text="{Binding ReleaseDateLabel}" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding Film.ReleaseDateDisplay}" Margin="0,0,0,12" />
+				<!-- Title block -->
+				<Border Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+				        CornerRadius="4" Padding="10,4" HorizontalAlignment="Left" Margin="0,0,0,8">
+					<TextBlock Text="{Binding Film.EpisodeLabel}" Foreground="White"
+					           FontSize="12" FontWeight="SemiBold" />
+				</Border>
+				<TextBlock Text="{Binding Film.Title}" FontSize="28" FontWeight="SemiBold"
+				           TextWrapping="Wrap" Margin="0,0,0,20" />
 
-				<TextBlock Text="{Binding DirectorLabel}" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding Film.Director}" Margin="0,0,0,12" />
+				<!-- Facts -->
+				<Grid Margin="0,0,0,24">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="Auto" MinWidth="130" />
+						<ColumnDefinition Width="*" />
+					</Grid.ColumnDefinitions>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="Auto" />
+					</Grid.RowDefinitions>
 
-				<TextBlock Text="{Binding ProducerLabel}" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding Film.Producer}" Margin="0,0,0,12" />
+					<TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding ReleaseDateLabel}"
+					           Opacity="0.6" Margin="0,0,16,8" />
+					<TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Film.ReleaseDateDisplay}"
+					           Margin="0,0,0,8" TextWrapping="Wrap" />
 
-				<TextBlock Text="{Binding OpeningCrawlLabel}" FontWeight="SemiBold" />
-				<TextBlock Text="{Binding Film.OpeningCrawl}" TextWrapping="Wrap" Margin="0,0,0,12" />
+					<TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding DirectorLabel}"
+					           Opacity="0.6" Margin="0,0,16,8" />
+					<TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Film.Director}"
+					           Margin="0,0,0,8" TextWrapping="Wrap" />
 
-				<!-- Character section: its own independent loading/empty/error/partial states,
-				     so a character failure never blanks the film's details above. -->
-				<TextBlock Text="{Binding CharactersLabel}" FontWeight="SemiBold" Margin="0,12,0,4" />
+					<TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding ProducerLabel}"
+					           Opacity="0.6" Margin="0,0,16,0" />
+					<TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Film.Producer}"
+					           TextWrapping="Wrap" />
+				</Grid>
 
-				<ProgressRing IsActive="{Binding IsCharactersLoading}"
-				              Visibility="{Binding IsCharactersLoading, Converter={StaticResource BoolToVisibilityConverter}}"
-				              HorizontalAlignment="Left" Width="20" Height="20" Margin="0,0,0,8" />
+				<!-- Opening crawl -->
+				<TextBlock Text="{Binding OpeningCrawlLabel}" FontSize="18" FontWeight="SemiBold"
+				           Margin="0,0,0,8" />
+				<Border Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+				        CornerRadius="4" Padding="16" Margin="0,0,0,28">
+					<TextBlock Text="{Binding Film.OpeningCrawl}" TextWrapping="Wrap"
+					           LineHeight="22" Opacity="0.9" />
+				</Border>
 
-				<TextBlock Text="{Binding CharactersEmptyMessage}"
-				           Visibility="{Binding IsCharactersEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
-				           TextWrapping="Wrap" Margin="0,0,0,8" />
+				<!-- The five related categories. Each section owns its own state, so one failing
+				     or being empty leaves the film's fields above and its four siblings intact. -->
+				<TextBlock Text="{Binding RelatedLabel}" FontSize="18" FontWeight="SemiBold"
+				           Margin="0,0,0,8" />
 
-				<StackPanel Visibility="{Binding HasCharactersError, Converter={StaticResource BoolToVisibilityConverter}}"
-				            Margin="0,0,0,8">
-					<TextBlock Text="{Binding CharactersErrorMessage}" TextWrapping="Wrap" Margin="0,0,0,8" />
-					<!-- Retries only the characters; the film above stays as it is. -->
-					<Button Content="{Binding RetryLabel}" Command="{Binding RetryCharactersCommand}" HorizontalAlignment="Left" />
-				</StackPanel>
-
-				<TextBlock Text="{Binding CharactersPartialMessage}"
-				           Visibility="{Binding HasPartialCharacterFailure, Converter={StaticResource BoolToVisibilityConverter}}"
-				           TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,8" />
-
-				<ItemsControl ItemsSource="{Binding Characters}"
-				              Visibility="{Binding IsCharactersLoaded, Converter={StaticResource BoolToVisibilityConverter}}"
-				              Margin="0,0,0,12">
+				<ItemsControl ItemsSource="{Binding Categories}">
 					<ItemsControl.ItemTemplate>
 						<DataTemplate>
-							<TextBlock Text="{Binding Name}" Margin="0,2" />
+							<!-- UWP has no Expander - that control ships in WinUI 2, which this
+							     project does not reference. So the section is built from a Button
+							     header over a body whose Visibility binds through the starter's
+							     existing BoolToVisibilityConverter. No new package, no new converter. -->
+							<Border BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+							        BorderThickness="1" CornerRadius="4" Margin="0,0,0,8">
+								<StackPanel>
+
+									<!-- Header: chevron, category name, entry count. The count comes
+									     from the film's own response, so it is meaningful even while
+									     the section is collapsed and has never been requested. -->
+									<Button Command="{Binding ToggleCommand}"
+									        HorizontalAlignment="Stretch"
+									        HorizontalContentAlignment="Stretch"
+									        Background="Transparent" BorderThickness="0"
+									        Padding="14,12">
+										<Grid>
+											<Grid.ColumnDefinitions>
+												<ColumnDefinition Width="Auto" />
+												<ColumnDefinition Width="*" />
+												<ColumnDefinition Width="Auto" />
+											</Grid.ColumnDefinitions>
+
+											<FontIcon Grid.Column="0" Glyph="&#xE76C;" FontSize="12" Opacity="0.6"
+											          VerticalAlignment="Center"
+											          Visibility="{Binding IsCollapsed, Converter={StaticResource BoolToVisibilityConverter}}" />
+											<FontIcon Grid.Column="0" Glyph="&#xE70D;" FontSize="12" Opacity="0.6"
+											          VerticalAlignment="Center"
+											          Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+											<TextBlock Grid.Column="1" Text="{Binding Title}"
+											           FontSize="15" FontWeight="SemiBold"
+											           VerticalAlignment="Center" Margin="12,0,12,0"
+											           TextWrapping="Wrap" />
+
+											<Border Grid.Column="2"
+											        Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+											        CornerRadius="10" Padding="10,2" MinWidth="32"
+											        VerticalAlignment="Center">
+												<TextBlock Text="{Binding Count}" FontSize="12" Opacity="0.8"
+												           HorizontalAlignment="Center" />
+											</Border>
+										</Grid>
+									</Button>
+
+									<!-- Body: only rendered while expanded. -->
+									<StackPanel Margin="14,0,14,12"
+									            Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+
+										<StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,8"
+										            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+											<ProgressRing IsActive="{Binding IsLoading}" Width="18" Height="18" />
+											<TextBlock Text="{Binding LoadingMessage}" Opacity="0.7" VerticalAlignment="Center" />
+										</StackPanel>
+
+										<TextBlock Text="{Binding EmptyMessage}"
+										           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
+										           TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,4" />
+
+										<StackPanel Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+										            Spacing="8" Margin="0,0,0,4" HorizontalAlignment="Left">
+											<TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+											<!-- Retries THIS section only - the film and the other four are untouched. -->
+											<Button Content="{Binding RetryLabel}" Command="{Binding RetryCommand}"
+											        HorizontalAlignment="Left" />
+										</StackPanel>
+
+										<TextBlock Text="{Binding PartialMessage}"
+										           Visibility="{Binding HasPartialFailure, Converter={StaticResource BoolToVisibilityConverter}}"
+										           TextWrapping="Wrap" Opacity="0.7" FontStyle="Italic" Margin="0,0,0,8" />
+
+										<ItemsControl ItemsSource="{Binding Items}">
+											<ItemsControl.ItemTemplate>
+												<DataTemplate>
+													<Border Background="{ThemeResource SystemControlBackgroundListLowBrush}"
+													        CornerRadius="4" Padding="12,8" Margin="0,0,0,4">
+														<TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+													</Border>
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+									</StackPanel>
+								</StackPanel>
+							</Border>
 						</DataTemplate>
 					</ItemsControl.ItemTemplate>
 				</ItemsControl>

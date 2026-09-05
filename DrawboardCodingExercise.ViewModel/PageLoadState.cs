@@ -11,5 +11,12 @@ public enum PageLoadState
 	Loaded,
 	Empty,
 	Error,
-	InvalidSelection
+	InvalidSelection,
+
+	/// <summary>
+	/// Nothing has been requested yet - the condition a collapsed related-category section is in
+	/// before the user first expands it (FR-028). Added LAST on purpose: it must not become
+	/// default(PageLoadState), which the pages rely on being Loading.
+	/// </summary>
+	NotStarted
 }

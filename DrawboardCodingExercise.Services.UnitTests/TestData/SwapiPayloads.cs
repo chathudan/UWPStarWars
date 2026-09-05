@@ -64,6 +64,45 @@ public static class SwapiPayloads
 		""url"": ""https://swapi.info/api/people/1""
 	}";
 
+	// The four payloads below are captured from the other related-category endpoints, and their
+	// only purpose is to prove the point research.md R10 rests on: all five categories publish a
+	// `name`, so one NamedResourceDto legitimately deserializes every one of them. Each keeps a
+	// couple of its category-specific fields (climate, hyperdrive_rating, ...) precisely because
+	// those fields must be IGNORED - if a stray one ever started binding, that would be the
+	// signal the categories had diverged and the single type no longer held.
+
+	/// <summary>A planet, as /planets/{id} returns it.</summary>
+	public const string Tatooine = @"{
+		""name"": ""Tatooine"",
+		""climate"": ""arid"",
+		""terrain"": ""desert"",
+		""url"": ""https://swapi.info/api/planets/1""
+	}";
+
+	/// <summary>A starship, as /starships/{id} returns it.</summary>
+	public const string CorellianCorvette = @"{
+		""name"": ""CR90 corvette"",
+		""model"": ""CR90 corvette"",
+		""hyperdrive_rating"": ""2.0"",
+		""url"": ""https://swapi.info/api/starships/2""
+	}";
+
+	/// <summary>A vehicle, as /vehicles/{id} returns it.</summary>
+	public const string SandCrawler = @"{
+		""name"": ""Sand Crawler"",
+		""model"": ""Digger Crawler"",
+		""vehicle_class"": ""wheeled"",
+		""url"": ""https://swapi.info/api/vehicles/4""
+	}";
+
+	/// <summary>A species, as /species/{id} returns it.</summary>
+	public const string Human = @"{
+		""name"": ""Human"",
+		""classification"": ""mammal"",
+		""language"": ""Galactic Basic"",
+		""url"": ""https://swapi.info/api/species/1""
+	}";
+
 	/// <summary>A film with every optional text field missing or blank, for placeholder coverage.</summary>
 	public const string FilmWithMissingOptionalFields = @"{
 		""title"": ""Untitled"",

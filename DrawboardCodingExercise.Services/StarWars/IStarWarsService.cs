@@ -26,33 +26,38 @@ public interface IStarWarsService
 	Task<FilmDto> GetFilmAsync(string filmId);
 
 	/// <summary>
-	/// Retrieves the people referenced by <paramref name="characterUrls"/>, preserving their
-	/// input order regardless of completion order, with at most a small bounded number of
-	/// requests in flight at once. A single failing character does not fail the whole batch;
-	/// only a *total* failure (every request fails) throws.
+	/// Retrieves the named records referenced by <paramref name="resourceUrls"/>, preserving
+	/// their input order regardless of completion order, with at most a small bounded number of
+	/// requests in flight at once. A single failing record does not fail the whole batch; only a
+	/// *total* failure (every request fails) throws.
+	///
+	/// This is deliberately category-agnostic: it takes URLs and returns names, and nothing in it
+	/// knows whether it is fetching people or starships. RelatedCategory is a display grouping and
+	/// never crosses this boundary - the film's own response already supplied the paths, so a
+	/// category parameter would be one the method never reads. See research.md R10.
 	/// </summary>
-	Task<CharacterLoadResult> GetCharactersAsync(IReadOnlyList<string> characterUrls);
+	Task<RelatedResourceLoadResult> GetRelatedResourcesAsync(IReadOnlyList<string> resourceUrls);
 }
 
 /// <summary>
-/// The outcome of a character batch load. "Some characters failed" is a first-class result
-/// here, not indistinguishable from a film that genuinely has fewer characters.
+/// The outcome of one category's batch load. "Some entries failed" is a first-class result here,
+/// not indistinguishable from a film that genuinely references fewer entries.
 /// </summary>
-public sealed class CharacterLoadResult
+public sealed class RelatedResourceLoadResult
 {
-	public CharacterLoadResult(IReadOnlyList<PersonDto> characters, int requestedCount, int failedCount)
+	public RelatedResourceLoadResult(IReadOnlyList<NamedResourceDto> resources, int requestedCount, int failedCount)
 	{
-		Characters = characters;
+		Resources = resources;
 		RequestedCount = requestedCount;
 		FailedCount = failedCount;
 	}
 
-	/// <summary>Successfully retrieved characters, in the order they were requested.</summary>
-	public IReadOnlyList<PersonDto> Characters { get; }
+	/// <summary>Successfully retrieved records, in the order they were requested.</summary>
+	public IReadOnlyList<NamedResourceDto> Resources { get; }
 
 	public int RequestedCount { get; }
 
 	public int FailedCount { get; }
 
-	public bool IsPartial => FailedCount > 0 && Characters.Count > 0;
+	public bool IsPartial => FailedCount > 0 && Resources.Count > 0;
 }

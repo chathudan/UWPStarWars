@@ -171,19 +171,35 @@
   <data name="FilmDetails.Error.Text" xml:space="preserve">
     <value>We couldn't load this film.</value>
   </data>
-  <data name="Progress.LoadingCharacters.Text" xml:space="preserve">
-    <value>Loading characters</value>
+  <data name="Progress.LoadingCategory.Text" xml:space="preserve">
+    <value>Loading {0}</value>
+    <comment>{0} is the localized category name. The category MUST appear here: the shell removes progress entries by exact string match, so five sections sharing one message would corrupt its progress list.</comment>
   </data>
-  <data name="FilmDetails.Characters.Label" xml:space="preserve">
+  <data name="FilmDetails.Related.Label" xml:space="preserve">
+    <value>In this film</value>
+  </data>
+  <data name="FilmDetails.Category.Characters.Label" xml:space="preserve">
     <value>Characters</value>
   </data>
-  <data name="FilmDetails.Characters.Empty.Text" xml:space="preserve">
-    <value>No characters are listed for this film.</value>
+  <data name="FilmDetails.Category.Planets.Label" xml:space="preserve">
+    <value>Planets</value>
   </data>
-  <data name="FilmDetails.Characters.Error.Text" xml:space="preserve">
-    <value>We couldn't load the characters for this film.</value>
+  <data name="FilmDetails.Category.Starships.Label" xml:space="preserve">
+    <value>Starships</value>
   </data>
-  <data name="FilmDetails.Characters.Partial.Text" xml:space="preserve">
-    <value>Some characters could not be loaded.</value>
+  <data name="FilmDetails.Category.Vehicles.Label" xml:space="preserve">
+    <value>Vehicles</value>
+  </data>
+  <data name="FilmDetails.Category.Species.Label" xml:space="preserve">
+    <value>Species</value>
+  </data>
+  <data name="FilmDetails.Category.Empty.Text" xml:space="preserve">
+    <value>Nothing is listed here for this film.</value>
+  </data>
+  <data name="FilmDetails.Category.Error.Text" xml:space="preserve">
+    <value>We couldn't load this list.</value>
+  </data>
+  <data name="FilmDetails.Category.Partial.Text" xml:space="preserve">
+    <value>Some entries in this list could not be loaded.</value>
   </data>
 </root>

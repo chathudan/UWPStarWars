@@ -31,8 +31,24 @@ public class FilmDto
 	[JsonProperty("release_date")]
 	public string ReleaseDate { get; set; }
 
+	// The five related-category reference arrays. They are modelled identically because they ARE
+	// identical - five arrays of absolute URLs to records that all publish a `name`. Any of them
+	// may be absent from the payload or explicitly null; FilmMapper (M5) normalises that away so
+	// no caller ever has to check.
 	[JsonProperty("characters")]
 	public List<string> Characters { get; set; }
+
+	[JsonProperty("planets")]
+	public List<string> Planets { get; set; }
+
+	[JsonProperty("starships")]
+	public List<string> Starships { get; set; }
+
+	[JsonProperty("vehicles")]
+	public List<string> Vehicles { get; set; }
+
+	[JsonProperty("species")]
+	public List<string> Species { get; set; }
 
 	[JsonProperty("url")]
 	public string Url { get; set; }
