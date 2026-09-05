@@ -82,10 +82,10 @@ So this table is read twice: top-to-bottom by cycle while building, and as the c
 | T19 | 6 | No more than 6 character requests in flight at once | `StarWarsService` | FR-010, V7 |
 | T20 | 6 | Partial character failure keeps successes, reports the count | `StarWarsService` | FR-012, V9 |
 | T21 | 6 | Total character failure is retryable | `StarWarsService` | FR-012 |
-| T13 | 7 | Progress cleared on success — busy and done counts match | both VMs | FR-019 |
-| T14 | 7 | Progress cleared on failure **and** on cancel | both VMs | FR-019 |
-| T15 | 7 | Progress cleared when the operation throws unexpectedly | both VMs | FR-019 |
-| T16 | 7 | Busy and done event strings are **byte-identical** | both VMs | AC-009 |
+| T13 | 7, 9, 13, 14 | Progress cleared on success — busy and done counts match | `PageViewModelBase` **and** both real VMs | FR-004, FR-019 |
+| T14 | 7, 9, 13 | Progress cleared on failure **and** on cancel | `PageViewModelBase` **and** both real VMs | FR-019 |
+| T15 | 7 | Progress cleared when the operation throws unexpectedly | `PageViewModelBase` (probe VM) | FR-019 |
+| T16 | 7, 9, 13, 14 | Busy and done event strings are **byte-identical** | `PageViewModelBase` **and** both real VMs | AC-009 |
 | T11 | 8 | Failure prompts retry/cancel; **Retry** succeeds on the second attempt | both VMs | FR-016, FR-017 |
 | T12 | 8 | Failure prompts retry/cancel; **Cancel** ⇒ `Error` state | both VMs | FR-018 |
 | T1 | 9 | Film list loads and exposes all films | `FilmsViewModel` | FR-001 |
@@ -108,6 +108,8 @@ So this table is read twice: top-to-bottom by cycle while building, and as the c
 
 > **T32, T33 and T34 were added by the TDD re-plan.** XV names "malformed, null, partial, or empty API responses" as mandatory; the suite covered null, partial and empty but **not malformed** — T32 closes that. T33 covers the one FR that had no test at all: FR-011's requirement that the character section fails *independently*, leaving the film's own fields on screen. T34 makes cycle 5 concrete — the 404-to-null conversion is service behaviour and needs its own red, rather than being tested only through the ViewModel.
 
+> **T13, T14 and T16 are asserted twice, deliberately.** Once against `PageViewModelBase` via a probe ViewModel (cycle 7), and again against each real ViewModel (cycles 9, 13, 14). The first proves the mechanism pairs events correctly; the second proves each ViewModel actually *uses* it. Without the second, a ViewModel that forgets to call `RunBusyAsync` passes the whole suite while leaving the shell's progress ring spinning — which is exactly the failure the base class exists to prevent.
+
 > **T35 asserts the log level, not the message text.** FR-020 requires diagnostics, and `Serilog.ILogger` substitutes cleanly, so "not practical to test" would be untrue. But asserting message templates couples tests to prose that will be reworded. The test asserts that a failure produces an `Error`-level entry and nothing more.
 
 ---
@@ -120,6 +122,7 @@ Automated tests cannot cover the UWP surface. Walk this before calling the featu
 
 - [ ] App launches directly on the **Films** page — no `Welcome`, no `PageA`.
 - [ ] Progress appears in the title bar while loading, and **clears** once loaded.
+- [ ] **The populated list is on screen within 5 seconds of launch** on a working connection (SC-001). Time it from window activation to the first row rendering; if it regularly exceeds 5s, that is a finding, not a slow machine.
 - [ ] Six films listed, each with title and episode number.
 - [ ] Order is Episode I → VI (i.e. *The Phantom Menace* first, **not** *A New Hope*).
 - [ ] Selecting a film opens the detail page for **that** film — check *Episode IV* opens *A New Hope*, not *The Phantom Menace*.
@@ -173,8 +176,25 @@ Point `ServerAddress` at an unreachable host, or disconnect the network.
 - [ ] All tests in §4 pass; `dotnet test` is green with the network disabled.
 - [ ] **TDD evidence exists for every non-trivial behaviour** (Constitution XIV + XV) — see below.
 - [ ] Every §5 box is ticked.
-- [ ] `README.md` is **unmodified** (it is the assignment brief — AC-014).
-- [ ] `SOLUTION.md` covers API choice, architecture decisions, assumptions, limitations, build/run/test, extension ideas, and AI-assisted development notes.
+- [ ] `README.md` is **unmodified** — confirm with `git status`. It is the supplied Drawboard exercise brief, not project documentation (AC-014).
+- [ ] `SOLUTION.md` contains all **ten** required sections — see the section check below.
+
+### `SOLUTION.md` section check
+
+All candidate-authored documentation lives here. The full contract is in [plan.md](./plan.md) § Documentation Deliverable.
+
+- [ ] 1. Chosen API — Star Wars Movies API, why it was chosen, verified response shapes, the id-vs-episode trap
+- [ ] 2. Architecture decisions — starter reuse, `IStarWarsService` above `IAPIClient`, DTOs vs display models, `PageViewModelBase`, rejected alternatives
+- [ ] 3. Assumptions — including the five clarification answers and what each reversed
+- [ ] 4. Limitations — the budget stops the caller but does not abort the request; no caching; Characters only; English only; registration has no automated safety net
+- [ ] 5. How to build and run — VS 2026, UWP workload, Windows 11 SDK, x64/ARM64 only, MSBuild for the UWP project
+- [ ] 6. How to run tests — `dotnet test`, deterministic and offline, injected budget
+- [ ] 7. **Error handling approach** — the failure taxonomy and why a 404 is an invalid selection rather than a retryable error
+- [ ] 8. **Progress / loading behaviour** — busy/done pairing, why a mismatch would throw, independent film and character progress, clearing on every path
+- [ ] 9. Future extension ideas — led by `CancellationToken` on `IAPIClient`
+- [ ] 10. AI-assisted development — what AI produced, challenges, manual corrections, and validation evidence
+
+> Sections 7 and 8 are the ones most likely to be skipped. Section 7 is required by Constitution XIII but was missing from spec AC-014's enumeration; section 8 is where a reviewer will probe hardest, since a mismatched event pair crashes the shell rather than merely looking untidy.
 
 ### TDD evidence check (Constitution XIV, XV)
 

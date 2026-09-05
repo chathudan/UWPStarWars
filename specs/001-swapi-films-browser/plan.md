@@ -56,7 +56,7 @@ Three decisions carry most of the design weight, and all three were verified aga
 | X | Logging | **PASS** | Serilog `ILogger` injected into `StarWarsService` and both VMs. Contextual logs for each retrieval and failure; no response payloads logged. |
 | XI | Automated Testing | **PASS** | xUnit + Shouldly + NSubstitute. Every FR-024 scenario has a named test (see [quickstart.md](./quickstart.md) §4). `IAPIClient`, `IStarWarsService`, `INavigationService`, `IUserInteractionService`, `IEventAggregator`, `ILocalizationService` are all substituted — no network. |
 | XII | UWP Compatibility | **PASS** | No new packages. All new shared code is `netstandard2.0`. No API newer than the UWP runtime is used; concurrency uses `SemaphoreSlim` + `Task.WhenAll`, both available (R5). |
-| XIII | README and Interview Readiness | **PASS** | New `SOLUTION.md` carries API choice, architecture decisions, assumptions, limitations, build/run/test, extensions and AI-assisted development notes. `README.md` is the assignment brief and stays untouched (AC-014). |
+| XIII | README and Interview Readiness | **PASS** | A new `SOLUTION.md` is the single documentation deliverable, with a ten-section content contract in [§ Documentation Deliverable](#documentation-deliverable-solutionmd) covering all eight XIII topics plus the AI clause and XIV's evidence gate. `README.md` is the supplied exercise brief and stays untouched — XIII is satisfied via *"or equivalent documentation"*. Spec AC-014 enumerates the same ten sections, so spec, plan, tasks and quickstart all agree on the deliverable. |
 | XIV | Validation Gates | **PASS** | [quickstart.md](./quickstart.md) is the executable checklist for build, tests, both pages, success/failure paths, navigation and progress clearing — now including the TDD-evidence gate. |
 | XV | Test-Driven Development | **PASS** | Every behaviour on XV's mandatory list is driven by a failing test first, sequenced in [§ Implementation Sequence](#implementation-sequence-test-first). XV's exempt categories — XAML, resw text, manifest, mechanical Autofac/`PageKey` registration — are exactly the items this plan already routes to manual validation in [quickstart.md](./quickstart.md) §5. Evidence is the commit sequence (R9). |
 
@@ -132,12 +132,20 @@ DrawboardCodingExercise/                    # UWP app
 
 DrawboardCodingExercise.Services.UnitTests/ # net8.0 — deterministic, offline
 ├── ...UnitTests.csproj                     ~ add ProjectReference → ViewModel
-├── StarWars/StarWarsServiceTests.cs        + retrieval, budget, 404, partial failure
-├── StarWars/SwapiResourcePathTests.cs      + URL normalisation + id extraction
-├── Mapping/FilmMapperTests.cs              + DTO mapping incl. missing optional fields
-├── ViewModels/FilmsViewModelTests.cs       + load, sort, empty, error, retry/cancel, progress
-├── ViewModels/FilmDetailsViewModelTests.cs + load, invalid param, characters, progress
-├── TestDoubles/                            + in-memory fakes and builders
+├── StarWars/
+│   ├── SwapiResourcePathTests.cs           + T30, T31 — URL normalisation + id extraction
+│   ├── StarWarsServiceFilmsTests.cs        + T24, T25, T32, T35 — list retrieval + failure modes
+│   ├── StarWarsServiceBudgetTests.cs       + T23 — 15s budget (injected, millisecond-scale)
+│   ├── StarWarsServiceFilmTests.cs         + T34 — single film, 404 ⇒ null
+│   └── StarWarsServiceCharactersTests.cs   + T18–T21 — order, concurrency cap, partial/total failure
+├── Mapping/FilmMapperTests.cs              + T26–T29 — mapping against a captured real payload
+├── ViewModels/
+│   ├── PageViewModelBaseProgressTests.cs   + T13–T16 via probe VM — busy/done pairing
+│   ├── PageViewModelBaseRetryTests.cs      + T11, T12 via probe VM — retry/cancel loop
+│   ├── FilmsViewModelTests.cs              + T1–T5, T13/T16 (real VM), T17 — load, sort, select, progress
+│   └── FilmDetailsViewModelTests.cs        + T6–T10, T13/T16 (real VM), T17, T22, T33 — detail, params, characters
+├── TestData/SwapiPayloads.cs               + captured snake_case API responses as string constants
+├── TestDoubles/Builders.cs                 + DTO and display-model builders
 └── XUnitTests.cs                           (kept — starter's framework smoke test)
 
 DrawboardCodingExercise.Services.IntegrationTests/  # unchanged
@@ -182,12 +190,12 @@ Dependencies flow downward — each layer's tests are written against types the 
 | 6 | Character retrieval | `GetCharactersAsync`, `CharacterLoadResult` | T18, T19, T20, T21 |
 | 7 | Progress pairing | `PageViewModelBase.RunBusyAsync` | T13, T14, T15, **T16** |
 | 8 | Retry/cancel loop | `PageViewModelBase` retry helper | T11, T12 |
-| 9 | Films page state | `FilmsViewModel` load/empty/error | T1, T3, T17 |
+| 9 | Films page state | `FilmsViewModel` load/empty/error | T1, T3, T17, **T13/T16 (real VM)** |
 | 10 | Film sorting | `FilmsViewModel` ordering | **T2** |
 | 11 | Selection navigation | `FilmsViewModel` select command | T4, T5 |
 | 12 | Detail parameter validation | `FilmDetailsViewModel` guards | T7, T8, T9 |
-| 13 | Detail load | `FilmDetailsViewModel` film state | T6, T10, T17 |
-| 14 | Detail character states | `FilmDetailsViewModel` character state | T22, **T33** |
+| 13 | Detail load | `FilmDetailsViewModel` film state | T6, T10, T17, **T13/T16 (real VM)** |
+| 14 | Detail character states | `FilmDetailsViewModel` character state | T22, **T33**, **T13/T16 (character load)** |
 
 Cycles 1–8 need no UWP types at all and run entirely in the net8.0 test project. Only after cycle 14 is any XAML written.
 
@@ -204,10 +212,12 @@ XV names nine behaviour categories as mandatory. Each maps to at least one cycle
 | Film selection navigation | 11 | T4, T5 |
 | Detail navigation parameter handling | 12, 13 | T7, T8, T9, T10 |
 | Retry/cancel API failure behaviour | 8 | T11, T12 |
-| `NotifyBusyEvent` / `NotifyDoneEvent` cleanup | 7 | T13–T16 |
+| `NotifyBusyEvent` / `NotifyDoneEvent` cleanup | 7, 9, 13, 14 | T13–T16 at the base class, then T13/T16 again against each real ViewModel and the character load |
 | Malformed, null, partial, empty responses | 3, 6 | **T32** (malformed), T25 (null/empty), T20 (partial), T3 (empty) |
 
 This audit is what produced T32, T33 and T34. The pre-XV suite covered null, partial and empty responses but had **no test for a malformed body**, and no test at all for FR-011's requirement that the character section fails independently of the film's own fields. Both were invisible until the mandatory list was checked category by category rather than requirement by requirement.
+
+**T13 and T16 are asserted at two layers on purpose.** Cycle 7 proves `PageViewModelBase` pairs the events correctly; cycles 9, 13 and 14 prove each real ViewModel — and the character load specifically — actually *calls* it. Only the first was originally planned, which left a ViewModel free to skip `RunBusyAsync` entirely and still pass the whole suite, leaving the shell's progress ring spinning. That is precisely the failure the base class exists to prevent, so testing only the mechanism and not its use defeated the point.
 
 ### Documented exemptions (XV closing clause)
 
@@ -223,6 +233,9 @@ XV: *"No production behavior is complete unless it has a corresponding automated
 | `IProvidePageHeader.PageHeader` on both VMs | Trivial constant-returning property (XV applies to *non-trivial* behaviour). The resw key it names is validated in §5. |
 | DTO auto-properties, display-model constructors | No behaviour. Exercised indirectly by T26–T29. |
 | Serilog **message templates** | Level is asserted (T35); wording is not. Asserting prose couples tests to text that will be reworded, without testing behaviour. |
+| **FR-014 — back navigation** | Entirely starter framework behaviour (`ShellViewModel.GoBackCommand` → `NavigationService.BackAsync`), reused unchanged. There is no new production code to drive with a test; testing it would test the starter, not this feature. Manually validated in [quickstart.md](./quickstart.md) §5. |
+| **Edge case — back navigation during an in-flight retrieval** | The guarantee is structural rather than branching: `RunBusyAsync` posts its done event in `finally`, so progress clears whichever way the load ends, and `NavigationService` resolves a fresh ViewModel per navigation, so a discarded one cannot write to a live page. Reproducing a mid-flight back navigation needs the real UWP frame. Manually validated in §5. |
+| **Edge case — rapid successive film selections** | Same structural basis: transient ViewModel registrations mean each navigation gets its own instance, so there is no shared state for a stale result to overwrite. There is no branch to drive with a test. Manually validated in §5. |
 | `SOLUTION.md` | Documentation. |
 
 Note what is deliberately **not** on this list: FR-020 logging. `Serilog.ILogger` substitutes cleanly with NSubstitute, so "not practical" would have been false — it gets T35 instead of an excuse.
@@ -232,6 +245,33 @@ Note what is deliberately **not** on this list: FR-020 logging. `Serilog.ILogger
 XIV now requires TDD evidence for non-trivial behaviour. Evidence here is the **commit sequence**: each cycle lands as a commit containing its failing test, followed by a commit containing the implementation that turns it green. `SOLUTION.md` points at that history.
 
 > ⚠️ **Nothing in this repository is committed yet** — `specs/` is untracked and the working tree holds only the starter plus these planning artifacts. Commit-based evidence only exists if committing starts *before* cycle 1. Retrofitting the history afterwards would not be evidence, and would be worse than honestly recording that TDD was followed without granular commits.
+
+## Documentation Deliverable: `SOLUTION.md`
+
+**`README.md` is the supplied Drawboard exercise brief and MUST NOT be modified.** It is the assignment's own instructions, not project documentation — editing it would overwrite the statement of the problem with the answer to it. Every word of candidate-authored documentation goes in a new `SOLUTION.md` at the repository root.
+
+Constitution XIII is satisfied by "a README **or equivalent documentation**"; `SOLUTION.md` is that equivalent. XIV's *"README is updated"* gate is read the same way — it means the project's documentation deliverable is current, which for this exercise is `SOLUTION.md`.
+
+### Required contents
+
+`SOLUTION.md` is not complete until every section below exists. The first eight satisfy Constitution XIII; the last two satisfy XIII's AI clause and XIV's evidence gate.
+
+| # | Section | Must cover | Source |
+|---|---|---|---|
+| 1 | **Chosen API** | Star Wars Movies API (`https://swapi.info/api`), why it was chosen over the MET alternative, and the verified response shapes — bare array, `snake_case` fields, absolute character URLs, and the id-vs-episode trap | [contracts/swapi-endpoints.md](./contracts/swapi-endpoints.md) |
+| 2 | **Architecture decisions** | Why the starter framework was reused unchanged; `IStarWarsService` above `IAPIClient`; DTOs kept apart from display models; `PageViewModelBase`; the decisions and rejected alternatives in R1–R9 | [research.md](./research.md) |
+| 3 | **Assumptions** | Everything in the spec's Assumptions section, plus the five clarification answers and what each reversed | [spec.md](./spec.md) |
+| 4 | **Limitations** | The 15-second budget stops the *caller* but does not abort the request; no caching or persistence; Characters only; English only; accessibility limited to stock controls; DI/page registration has no automated safety net | R3, plan exemptions |
+| 5 | **How to build and run** | VS 2026 + UWP workload + Windows 11 SDK; x64/ARM64 only (never `AnyCPU`); MSBuild for the UWP project, `dotnet build` for the rest; how to point at an unreachable host to demo failures | [quickstart.md](./quickstart.md) §1–3 |
+| 6 | **How to run tests** | `dotnet test` on the unit-test project; that the suite is deterministic and runs with **no network**; that the request budget is injected so no test waits 15 real seconds | [quickstart.md](./quickstart.md) §4 |
+| 7 | **Error handling approach** | The failure taxonomy and *why the distinctions exist*: recoverable failures get retry/cancel via `IUserInteractionService`; a 404 on a film id is an invalid selection, **not** a retryable error, because retrying a wrong id can never succeed; invalid navigation parameters short-circuit before any request; partial character failure keeps successes while total failure is retryable; nothing fails silently or strands the user on a spinner | [contracts/IStarWarsService.md](./contracts/IStarWarsService.md) |
+| 8 | **Progress / loading behaviour** | How `NotifyBusyEvent`/`NotifyDoneEvent` drive the shell's progress ring; that `PageViewModelBase` captures one message string and posts both events from it with done in `finally`, making a mismatch structurally impossible; **why that matters** — `ShellViewModel.OnNotifyDone` calls `RemoveAt(IndexOf(...))` with no `-1` guard, so a mismatched pair throws on the UI thread; that the film load and character load carry independent progress; and that progress clears on success, failure, cancel and unexpected exception | R4 |
+| 9 | **Future extension ideas** | `CancellationToken` on `IAPIClient` so a timeout truly aborts (the direct fix for limitation 4); the other four related categories (planets, starships, vehicles, species); caching the film list; search and filter; deep-linking, which the identifier-based navigation already permits; further languages, which the localization work makes a content-only change | R3, spec Out of Scope |
+| 10 | **AI-assisted development** | What AI produced; the challenges it hit; the manual corrections made; and the **validation evidence** — the TDD commit sequence required by XIV, plus every item on the documented-exemptions table with its reason | XIII, XIV |
+
+### On section 10
+
+The brief asks specifically about the challenges an agent faced and how they were overcome collaboratively, so this section should be concrete rather than generic. Worth recording honestly: the API's response shape contradicts the widely-documented `swapi.dev` contract that most training data describes, so the bare-array shape and the per-film endpoint were **verified by request** rather than assumed; the `CamelCasePropertyNamesContractResolver` interaction with `[JsonProperty]` was **verified by running a probe** rather than reasoned about, because the documented `OverrideSpecifiedNames` behaviour suggested the opposite conclusion; and the `-1` guard hazard in `ShellViewModel` was found by reading starter code, not by inference. Each is a case where the plausible answer and the correct one differed.
 
 ## Phase 0: Research
 

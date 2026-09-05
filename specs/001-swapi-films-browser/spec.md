@@ -175,7 +175,7 @@ These are graded acceptance criteria for this exercise, not implementation prefe
 - **AC-011**: User-facing strings MUST come from `Resources.resw` via the existing localization mechanisms (`x:Uid`, `ILocalizationService`, or the page-header convention).
 - **AC-012**: Shared projects MUST remain `netstandard2.0`-compatible and the app MUST remain buildable against the configured Windows SDK / UWP runtime constraints.
 - **AC-013**: Tests MUST use xUnit, Shouldly and NSubstitute.
-- **AC-014**: Project documentation MUST be updated with the chosen API, architecture decisions, assumptions, limitations, build/run/test instructions, extension ideas, and AI-assisted development notes (what AI produced, challenges it hit, manual corrections made, and how the result was validated). `README.md` is the assignment brief and MUST be left as-is; the write-up goes in a separate document.
+- **AC-014**: All candidate-authored documentation MUST live in a new `SOLUTION.md` at the repository root, covering ten sections: (1) chosen API, (2) architecture decisions, (3) assumptions, (4) limitations, (5) how to build and run, (6) how to run tests, (7) **error handling approach**, (8) **progress/loading behaviour**, (9) future extension ideas, and (10) AI-assisted development — what AI produced, the challenges it hit, the manual corrections made, and the validation evidence. Sections 1–9 satisfy Constitution XIII's eight required topics plus progress behaviour; section 10 satisfies XIII's AI clause and XIV's evidence gate. `README.md` is the supplied Drawboard exercise brief — it states the problem, not the solution — and MUST NOT be modified.
 
 ### Key Entities
 
