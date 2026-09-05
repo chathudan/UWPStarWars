@@ -156,4 +156,28 @@
   <data name="Common.RetryButton.Content" xml:space="preserve">
     <value>Retry</value>
   </data>
+  <data name="PageHeader.FilmDetails.Text" xml:space="preserve">
+    <value>Film Details</value>
+  </data>
+  <data name="Progress.LoadingFilmDetails.Text" xml:space="preserve">
+    <value>Loading film details</value>
+  </data>
+  <data name="FilmDetails.ReleaseDate.Label" xml:space="preserve">
+    <value>Release Date</value>
+  </data>
+  <data name="FilmDetails.Director.Label" xml:space="preserve">
+    <value>Director</value>
+  </data>
+  <data name="FilmDetails.Producer.Label" xml:space="preserve">
+    <value>Producer</value>
+  </data>
+  <data name="FilmDetails.OpeningCrawl.Label" xml:space="preserve">
+    <value>Opening Crawl</value>
+  </data>
+  <data name="FilmDetails.InvalidSelection.Text" xml:space="preserve">
+    <value>This film could not be opened. Please go back and select another film.</value>
+  </data>
+  <data name="FilmDetails.Error.Text" xml:space="preserve">
+    <value>We couldn't load this film.</value>
+  </data>
 </root>
