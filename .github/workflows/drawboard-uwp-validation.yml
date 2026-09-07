@@ -1,0 +1,43 @@
+name: Drawboard UWP Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-star-wars-uwp-solution:
+    name: Validate Star Wars UWP solution
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore deterministic unit tests
+        run: dotnet restore DrawboardCodingExercise.Services.UnitTests\DrawboardCodingExercise.Services.UnitTests.csproj
+
+      - name: Run deterministic unit tests
+        run: dotnet test DrawboardCodingExercise.Services.UnitTests\DrawboardCodingExercise.Services.UnitTests.csproj --configuration Release --no-restore
+
+      - name: Build UWP application package
+        run: msbuild DrawboardCodingExercise\DrawboardCodingExercise.csproj /restore /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly
+
+      - name: Upload UWP package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: DrawboardCodingExercise-UWP-AppPackages
+          path: DrawboardCodingExercise\AppPackages\**
+          if-no-files-found: warn
+
+      - name: Upload UWP release build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: DrawboardCodingExercise-UWP-x64-Release
+          path: DrawboardCodingExercise\bin\x64\Release\**
+          if-no-files-found: error

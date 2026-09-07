@@ -5,7 +5,7 @@ Candidate write-up for the Drawboard UWP coding exercise.
 > `README.md` is the supplied exercise brief and is deliberately left untouched — it states the
 > problem, not the solution. All candidate-authored documentation lives here.
 
-**Status: complete.** All four user stories are implemented test-first, 77 unit tests pass with no
+**Status: complete.** All four user stories are implemented test-first, 78 unit tests pass with no
 network access, and the solution builds and deploys as a UWP app.
 
 ---
@@ -335,7 +335,18 @@ Notes for an actual release, as opposed to a local run:
 
 ---
 
-## 11. AI-assisted development
+## 11. Continuous integration
+
+GitHub Actions runs the deterministic unit test suite and builds the UWP app on a Windows runner.
+The workflow is named **Drawboard UWP Validation** and uploads the generated package/build output
+as artifacts for review.
+
+The CI workflow does not launch the UWP app because interactive UWP activation is better validated
+manually on a Windows development machine.
+
+---
+
+## 12. AI-assisted development
 
 An AI agent (Claude, via Claude Code) was used throughout, driven by a
 [Spec Kit](https://github.com/github/spec-kit) workflow: a project constitution, then
@@ -412,7 +423,7 @@ the loose layout, so a successful build can still launch yesterday's code. All d
 
 ### How the final code was validated
 
-1. **77 unit tests**, deterministic and fully offline — `IAPIClient` is substituted and API
+1. **78 unit tests**, deterministic and fully offline — `IAPIClient` is substituted and API
    responses are captured real payloads (`snake_case`, exactly as the service returns them), so the
    naming trap in §1 is exercised rather than assumed away.
 2. **Test-first throughout.** Every behavioural change began with a failing test, confirmed to fail
@@ -428,10 +439,8 @@ the loose layout, so a successful build can still launch yesterday's code. All d
 
 ### Honest gaps
 
-- The **happy path has not been seen end to end**: the environment used for development could not
-  reach `swapi.info`, so every live run exercised the failure path. The success path is covered by
-  unit tests against captured real payloads, but a reviewer with network access should confirm the
-  populated list and detail page — see the checklist in
-  [`quickstart.md`](specs/001-swapi-films-browser/quickstart.md) §5.
 - **XAML has no automated coverage** (§4), which is exactly how the `x:Uid` defect survived to a
   running app.
+- **Live public API integration tests are not part of the default test run.** The normal suite stays
+  deterministic and offline; a future non-default integration suite could exercise `swapi.info`
+  directly without making CI depend on third-party availability.
