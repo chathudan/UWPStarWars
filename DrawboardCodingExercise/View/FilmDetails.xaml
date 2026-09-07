@@ -109,6 +109,7 @@
 									     from the film's own response, so it is meaningful even while
 									     the section is collapsed and has never been requested. -->
 									<Button Command="{Binding ToggleCommand}"
+									        AutomationProperties.Name="{Binding Title}"
 									        HorizontalAlignment="Stretch"
 									        HorizontalContentAlignment="Stretch"
 									        Background="Transparent" BorderThickness="0"

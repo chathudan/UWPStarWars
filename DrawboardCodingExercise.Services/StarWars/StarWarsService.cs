@@ -119,7 +119,10 @@ public class StarWarsService : IStarWarsService
 				// Every request failed - that is a recoverable failure the caller can retry,
 				// not a silently-empty section (FR-012).
 				var firstFailure = slots.First(slot => slot.Failure != null).Failure;
-				_logger.Error(firstFailure, "Failed to retrieve any of {RequestedCount} related Star Wars resources");
+				_logger.Error(
+					firstFailure,
+					"Failed to retrieve any of {RequestedCount} related Star Wars resources",
+					resourceUrls.Count);
 				throw firstFailure;
 			}
 

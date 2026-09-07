@@ -38,14 +38,15 @@ Full contract notes: [`specs/001-swapi-films-browser/contracts/swapi-endpoints.m
 | Explicit `[JsonProperty]` on every DTO property | The shared serializer applies a camel-case strategy; without attributes `episode_id` silently binds to `0`. Attributes are applied even where the name already matches, so nothing depends on an incidental match. |
 | Navigation by opaque `string` id, not the film object | A UWP navigation parameter must survive process suspend/resume; a string does, an object graph does not. It also lets Page 2 stand on its own. |
 | `PageViewModelBase` owning busy/done pairing | `ShellViewModel.OnNotifyDone` calls `RemoveAt(IndexOf(...))` with no `-1` guard, so a mismatched pair **throws on the UI thread**. Capturing the message once and posting both events from it makes the mismatch structurally impossible rather than a convention to remember. |
-| Two independent state machines on the detail page | The film and its characters fail separately (FR-011). A character failure leaves the film's own fields on screen; each carries its own `PageLoadState`, its own progress pair, and its own retry command. |
-| `SemaphoreSlim(6)` + `Task.WhenAll` for characters | `WhenAll` returns results positionally, so request order is preserved for free regardless of completion order. The cap keeps ~34 simultaneous requests off a free community mirror. |
+| Independent state machines on the detail page | The film and each related category fail separately (FR-011). A category failure leaves the film's own fields and the other sections on screen; each section carries its own `PageLoadState`, progress pair, and retry command. |
+| `SemaphoreSlim(6)` + `Task.WhenAll` for related resources | `WhenAll` returns results positionally, so request order is preserved for free regardless of completion order. The cap keeps each expanded category from overwhelming a free community mirror. |
 | Localized text via ViewModel properties, not `x:Uid` | Discovered the hard way — see §11. |
 
 ## 3. Assumptions
 
-- **Characters** was chosen as the related category; the other four (planets, starships, vehicles,
-  species) are identical in shape and listed as an extension.
+- The detail page shows all five related categories: characters, planets, starships, vehicles and
+  species. Characters auto-expand on arrival because they satisfy the brief's required related list;
+  the other four sections load only when expanded.
 - The film list is the app's landing page, so a reviewer lands on the deliverable rather than a
   placeholder.
 - Films are ordered by **episode number ascending** (I–VI), not the API's release order. The list
@@ -69,8 +70,8 @@ Full contract notes: [`specs/001-swapi-films-browser/contracts/swapi-endpoints.m
 - **XAML is verified only manually.** There is no UI test project; layout and bindings were checked
   by running the app. §11 describes a defect this caught that every automated check missed.
 - **Accessibility** goes no further than what the stock controls provide.
-- **The character list shows names only.** Each character is fetched individually, so richer detail
-  is available but was out of scope.
+- **Related category lists show names only.** Each referenced resource is fetched individually, so
+  richer detail is available but was out of scope.
 
 ---
 
@@ -232,8 +233,8 @@ that isn't is a worse experience than not offering it.**
 | **404 on a film id** | `InvalidSelection` | **No** — the id is wrong; retrying cannot fix it |
 | Missing / non-string / blank navigation parameter | `InvalidSelection`, **no request issued** | **No** |
 | 4xx (non-404), 5xx, network failure, malformed body, >15s | Recoverable failure | **Yes** |
-| *Some* characters fail | `Loaded` + "some characters could not be loaded" | No — successes are kept |
-| *Every* character fails | Recoverable failure for that section only | **Yes** |
+| *Some* related entries fail | `Loaded` + "some entries could not be loaded" | No — successes are kept |
+| *Every* related entry in a section fails | Recoverable failure for that section only | **Yes** |
 
 How it works in practice:
 
@@ -248,9 +249,9 @@ How it works in practice:
    failure into a page state. This is asserted by a test, not left to discipline.
 5. Failures are logged through Serilog with the operation's context, and never the response body.
 
-The character section is deliberately independent: a character failure leaves the film's own
-details on screen, and its retry re-fetches **only** the characters — asserted by a test that
-requires `GetFilmAsync` to have been called exactly once.
+Each related-category section is deliberately independent: a section failure leaves the film's own
+details and the other sections on screen, and its retry re-fetches **only** that section — asserted
+by tests that require `GetFilmAsync` not to be called again.
 
 ## 8. Progress / loading behaviour
 
@@ -285,8 +286,9 @@ Each page also exposes its own `PageLoadState` (`Loading` / `Loaded` / `Empty` /
 1. **`CancellationToken` on `IAPIClient`** — the direct fix for the limitation in §4. Would let the
    timeout actually abort the request rather than only stopping the caller waiting, and would let a
    user navigating away cancel in-flight work.
-2. **The other four related categories** (planets, starships, vehicles, species) — identical in
-   shape to Characters; the service method would generalise to a resource-list fetch.
+2. **Richer related-resource detail pages** — the app currently shows only resource names. The same
+   service boundary could support selecting a character, planet, starship, vehicle or species for a
+   deeper view.
 3. **Cache the film list** — six films that never change, re-fetched on every back-navigation.
    A short-lived in-memory cache would make back-navigation instant.
 4. **Search and filter** on the list page, and sort by release date as well as episode.
@@ -344,8 +346,10 @@ An AI agent (Claude, via Claude Code) was used throughout, driven by a
 ### What AI produced
 
 Effectively all of the code and specification artifacts: the spec, plan, research decisions, task
-breakdown, every production class, all 77 tests, and this document. The commit history is the real
-record — each TDD cycle is a `test:` commit followed by its `feat:` commit.
+breakdown, production classes, tests, and this document. Most production behaviour was implemented
+through explicit red/green TDD cycles, visible in the commit history as paired `test:` and `feat:`
+commits. The final five-category expansion was committed as one cohesive enhancement containing
+both tests and implementation; the tests remain deterministic and cover the added behaviour.
 
 Human direction shaped it at every step, and that mattered more than the volume of generated code:
 choosing the API, mandating TDD partway through (the constitution gained Principle XV mid-project,

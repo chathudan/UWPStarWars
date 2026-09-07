@@ -96,6 +96,24 @@ public class StarWarsServiceCharactersTests
 	}
 
 	[Fact]
+	public async Task GetRelatedResourcesAsync_logs_requested_count_when_every_request_fails()
+	{
+		var apiClient = new FakeApiClient()
+			.Throws("people/1", new HttpStatusException(HttpStatusCode.ServiceUnavailable))
+			.Throws("people/2", new HttpStatusException(HttpStatusCode.ServiceUnavailable));
+		var logger = Substitute.For<ILogger>();
+		var sut = new StarWarsService(apiClient, new FakeApiSettings(Base), logger, TimeSpan.FromSeconds(15));
+		var urls = new[] { $"{Base}/people/1", $"{Base}/people/2" };
+
+		await Should.ThrowAsync<HttpStatusException>(() => sut.GetRelatedResourcesAsync(urls));
+
+		logger.Received(1).Error(
+			Arg.Any<Exception>(),
+			"Failed to retrieve any of {RequestedCount} related Star Wars resources",
+			2);
+	}
+
+	[Fact]
 	public async Task GetRelatedResourcesAsync_returns_an_empty_result_for_a_null_or_empty_input()
 	{
 		var sut = CreateSut(new FakeApiClient());

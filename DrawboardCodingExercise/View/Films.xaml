@@ -49,6 +49,7 @@
 						     visuals for free, which a bare ListView item does not. -->
 						<Button Command="{Binding DataContext.SelectFilmCommand, ElementName=RootGrid}"
 						        CommandParameter="{Binding}"
+						        AutomationProperties.Name="{Binding Title}"
 						        HorizontalAlignment="Stretch"
 						        HorizontalContentAlignment="Stretch"
 						        Background="{ThemeResource SystemControlBackgroundListLowBrush}"

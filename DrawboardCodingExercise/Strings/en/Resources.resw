@@ -127,7 +127,7 @@
     <value>There was an error while retrieving your data. Would you like to try again?</value>
   </data>
   <data name="PageHeader.Films.Text" xml:space="preserve">
-    <value>Films</value>
+    <value>Star Wars Films</value>
   </data>
   <data name="Progress.LoadingFilms.Text" xml:space="preserve">
     <value>Loading films</value>
